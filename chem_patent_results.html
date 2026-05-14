@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>检索结果 - 玻尔</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #1f2329;
+    font-size: 14px;
+  }
+
+  /* ============ 整体布局 ============ */
+  .app { display: flex; min-height: 100vh; }
+
+  /* ============ 左侧 Bohrium 导航栏 ============ */
+  .sidebar {
+    width: 220px;
+    background: #f0edf5;
+    border-right: 1px solid #e3dff0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .logo { display: flex; align-items: center; gap: 8px; padding: 16px 18px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    border: 2px solid #2c2c2c;
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-weight: 600; line-height: 1;
+    position: relative;
+  }
+  .logo-icon .num { font-size: 8px; position: absolute; top: 2px; right: 3px; }
+  .logo-icon .sym { font-size: 14px; }
+  .logo-text { line-height: 1.2; }
+  .logo-text .cn { font-size: 16px; font-weight: 600; }
+  .logo-text .en { font-size: 11px; color: #6b7280; }
+
+  .nav { padding: 8px 10px; flex: 1; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 6px;
+    cursor: pointer; color: #1f2329; font-size: 14px;
+  }
+  .nav-item:hover { background: #e6e1ee; }
+  .nav-item .icon { width: 16px; height: 16px; opacity: 0.85; flex-shrink: 0; }
+  .sidebar svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-item .arrow { margin-left: auto; font-size: 10px; color: #8a8f99; }
+  .nav-section { margin-top: 4px; }
+  .sub-list { padding-left: 20px; margin-top: 2px; }
+  .sub-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; color: #4a4f59; font-size: 13px;
+  }
+  .sub-item:hover { background: #e6e1ee; }
+  .history-list { padding-left: 20px; }
+  .history-item {
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; color: #4a4f59; font-size: 13px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-item:hover { background: #e6e1ee; }
+
+  .sidebar-footer { border-top: 1px solid #e3dff0; padding: 12px; }
+  .invite-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 6px;
+    background: #e6e1ee; font-size: 13px;
+    cursor: pointer; margin-bottom: 10px;
+  }
+  .plan { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 6px; }
+  .plan .upgrade {
+    margin-left: auto; font-size: 12px; color: #6b7280;
+    background: #fff; padding: 2px 8px; border-radius: 10px;
+    border: 1px solid #e5e7eb; cursor: pointer;
+  }
+  .quota { display: flex; align-items: center; gap: 14px; font-size: 12px; color: #4a4f59; }
+  .quota span { display: inline-flex; align-items: center; gap: 4px; }
+
+  .bottom-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid #e3dff0;
+    font-size: 13px; color: #4a4f59;
+  }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #c4b5fd, #818cf8); }
+
+  .collapse-handle {
+    position: absolute; right: -12px; top: 50%;
+    transform: translateY(-50%);
+    width: 22px; height: 36px;
+    background: #fff; border: 1px solid #e3dff0; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #8a8f99; z-index: 5;
+  }
+
+  /* ============ 主内容区 ============ */
+  .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .topbar {
+    background: #fff;
+    padding: 12px 24px;
+    border-bottom: 1px solid #e5e5e7;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 14px;
+    padding: 6px 8px;
+    border-radius: 6px;
+  }
+  .back-btn:hover { color: #6366f1; }
+  .search-keyword {
+    font-size: 15px;
+    color: #1f2329;
+    font-weight: 500;
+  }
+  .search-keyword span {
+    color: #9ca3af;
+    font-weight: normal;
+    margin-right: 4px;
+  }
+  .edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6366f1;
+    font-size: 14px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .edit-btn:hover { background: #f5f3ff; }
+
+  /* ============ Tab 切换 ============ */
+  .tab-bar {
+    background: #fff;
+    padding: 0 24px;
+    border-bottom: 1px solid #e5e5e7;
+    display: flex;
+    gap: 8px;
+  }
+  .tab-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab-item:hover { color: #1f2329; }
+  .tab-item.active { 
+    color: #6366f1; 
+    font-weight: 500; 
+    border-bottom-color: #6366f1; 
+  }
+  .tab-item .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid #ece8f5;
+    border-radius: 10px;
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .tab-item.active .badge {
+    background: #ede9ff;
+    color: #6366f1;
+  }
+  .tab-item .badge .highlight {
+    color: #6366f1;
+    font-weight: 600;
+  }
+
+  /* ============ 内容区域 ============ */
+  .content-wrapper {
+    display: flex;
+    flex: 1;
+    padding: 20px 24px;
+    gap: 20px;
+  }
+
+  /* ============ 左侧面板 ============ */
+  .left-panel {
+    width: 260px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+    position: sticky;
+    top: 20px;
+  }
+  .left-panel::-webkit-scrollbar { width: 5px; }
+  .left-panel::-webkit-scrollbar-track { background: transparent; }
+  .left-panel::-webkit-scrollbar-thumb { background: #d8d4e6; border-radius: 3px; }
+  .left-panel::-webkit-scrollbar-thumb:hover { background: #b8b2d0; }
+
+  .filter-box {
+    border: 1px solid #ece8f5;
+    border-radius: 10px;
+    padding: 16px;
+    background: #fff;
+  }
+  .filter-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2329;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .filter-reset {
+    font-size: 12px;
+    color: #9ca3af;
+    cursor: pointer;
+  }
+  .filter-reset:hover { color: #6366f1; }
+
+  .filter-section {
+    border-top: 1px solid #f0f0f2;
+    padding: 14px 0;
+  }
+  .filter-section:first-of-type { border-top: none; padding-top: 0; }
+  .filter-section-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1f2329;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .filter-section-title .arrow {
+    color: #9ca3af;
+    font-size: 10px;
+    transition: transform 0.2s;
+  }
+  .filter-section.collapsed .filter-section-title .arrow {
+    transform: rotate(-90deg);
+  }
+  .filter-section.collapsed .filter-options { display: none; }
+
+  .filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #4a4f59;
+  }
+  .filter-option:hover { color: #1f2329; }
+  .filter-option input[type="radio"],
+  .filter-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #6366f1;
+  }
+  .filter-option .label { flex: 1; }
+  .filter-option .count {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+  .show-more {
+    color: #6366f1;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  .range-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .range-row input {
+    flex: 1;
+    width: 0;
+    padding: 6px 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 12px;
+    outline: none;
+  }
+  .range-row input:focus { border-color: #818cf8; }
+  .range-row .dash { color: #9ca3af; font-size: 12px; }
+  .range-apply {
+    margin-top: 8px;
+    width: 100%;
+    padding: 6px 0;
+    background: #ede9ff;
+    color: #6366f1;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .range-apply:hover { background: #dcd5ff; }
+
+  /* ============ 右侧结果列表 ============ */
+  .results-panel {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .result-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding: 0 4px;
+  }
+  .result-count {
+    font-size: 13px;
+    color: #4a4f59;
+  }
+  .result-count b { color: #6366f1; font-weight: 600; }
+
+  .patent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .patent-item {
+    border: 1px solid #ece8f5;
+    border-radius: 10px;
+    padding: 20px 24px;
+    position: relative;
+    background: #fff;
+  }
+  .patent-item:hover { border-color: #c7d2fe; }
+
+  .patent-index {
+    position: absolute;
+    left: -8px;
+    top: 20px;
+    color: #c4c8d2;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .patent-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1f2329;
+    line-height: 1.5;
+    margin-bottom: 6px;
+    padding-left: 16px;
+  }
+  .patent-title:hover { color: #6366f1; cursor: pointer; }
+
+  .patent-title-cn {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 10px;
+    padding-left: 16px;
+    line-height: 1.5;
+  }
+
+  .patent-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    padding-left: 16px;
+    flex-wrap: wrap;
+  }
+  .patent-meta .patent-num {
+    color: #6366f1;
+    font-weight: 500;
+  }
+  .patent-meta .patent-office {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #9ca3af;
+  }
+  .patent-office .office-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .office-dot.cn { background: #dc2626; }
+  .office-dot.us { background: #2563eb; }
+  .office-dot.ep { background: #16a34a; }
+  .office-dot.wo { background: #9333ea; }
+
+  .patent-dates {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 8px;
+    padding-left: 16px;
+    flex-wrap: wrap;
+  }
+  .patent-dates .date-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .patent-assignee {
+    font-size: 13px;
+    color: #4a4f59;
+    margin-bottom: 8px;
+    padding-left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .patent-assignee .assignee-label {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+
+  .patent-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 12px;
+    padding-left: 16px;
+  }
+  .stat-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .patent-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 16px;
+  }
+  .action-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #6366f1;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+  }
+  .action-btn:hover { background: #f5f3ff; }
+  .action-btn .count {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+  .action-btn.active {
+    background: #ede9ff;
+    color: #6366f1;
+  }
+
+  .action-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #9ca3af;
+    background: transparent;
+    border: none;
+  }
+  .icon-btn:hover { background: #f5f5f7; color: #6b7280; }
+  .icon-btn.active { color: #6366f1; }
+
+  /* ============ 展开区域 ============ */
+  .expand-section {
+    display: none;
+    margin-top: 16px;
+    padding-left: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f2;
+  }
+  .expand-section.show { display: block; }
+
+  .abstract-content {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #4a4f59;
+  }
+
+  /* ============ 反应展开（复用 chem_reaction_results 设计） ============ */
+  .rxn-card {
+    background: #fff;
+    border: 1px solid #ece8f5;
+    border-radius: 10px;
+    padding: 18px 22px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .rxn-card:hover { border-color: #c7d2fe; }
+  .rxn-card + .rxn-card { margin-top: 12px; }
+
+  .rxn-head {
+    display: flex; align-items: center;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .rxn-index { color: #c4c8d2; font-size: 13px; font-weight: 500; min-width: 22px; }
+  .rxn-id {
+    color: #6366f1; font-weight: 500; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .rxn-id .label { color: #9ca3af; font-weight: 400; margin-right: 4px; }
+  .rxn-classify { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+  .rxn-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    background: #f3f0ff;
+    color: #7c3aed;
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 18px;
+  }
+  .rxn-tag.outline { background: #fff; color: #4a4f59; border: 1px solid #ece8f5; }
+  .rxn-head-spacer { flex: 1; }
+  .rxn-head-meta {
+    color: #6b7280; font-size: 12px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+
+  .rxn-equation {
+    display: flex; align-items: stretch; gap: 12px;
+    flex-wrap: wrap;
+    background: #fafaff;
+    border: 1px dashed #e3dff0;
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .mol-card {
+    flex: 1 1 180px;
+    min-width: 160px;
+    max-width: 280px;
+    border: 1px solid #e3dff0;
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column;
+    justify-content: center; gap: 4px;
+  }
+  .mol-card .role {
+    font-size: 11px;
+    color: #9ca3af;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .mol-card .name {
+    font-size: 14px;
+    color: #1f2329;
+    line-height: 1.4;
+    word-break: break-word;
+    font-weight: 500;
+  }
+  .mol-card.product { border-color: #c7d2fe; background: #f5f3ff; }
+  .mol-card.product .role { color: #6366f1; }
+
+  .op {
+    display: flex; align-items: center;
+    color: #6b7280; font-size: 22px;
+    flex-shrink: 0; user-select: none;
+  }
+
+  .rxn-arrow {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    flex-shrink: 0; min-width: 70px;
+    padding: 0 4px;
+  }
+  .rxn-arrow .arrow-line {
+    width: 100%;
+    height: 1.5px;
+    background: #4a4f59;
+    position: relative;
+    margin: 6px 0;
+  }
+  .rxn-arrow .arrow-line::after {
+    content: "";
+    position: absolute;
+    right: -1px; top: 50%;
+    width: 0; height: 0;
+    border-left: 8px solid #4a4f59;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    transform: translateY(-50%);
+  }
+  .rxn-arrow .flask-icon {
+    color: #6366f1;
+    font-size: 14px;
+  }
+
+  .conditions-toggle {
+    display: flex; align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #f5f3fa;
+    border: 1px solid #ece8f5;
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+  }
+  .conditions-toggle:hover {
+    background: #ede9ff;
+    border-color: #c7d2fe;
+  }
+  .conditions-toggle .ct-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 22px; height: 22px;
+    padding: 0 8px;
+    background: #ede9ff;
+    color: #6366f1;
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .conditions-toggle:hover .ct-count { background: #fff; }
+  .conditions-toggle .ct-text {
+    flex: 1;
+    font-size: 13px;
+    color: #1f2329;
+    font-weight: 500;
+  }
+  .conditions-toggle .ct-hint {
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .conditions-toggle .ct-caret {
+    color: #6366f1;
+    transition: transform 0.2s;
+    display: inline-flex;
+  }
+  .rxn-card.expanded .conditions-toggle .ct-caret {
+    transform: rotate(180deg);
+  }
+
+  .conditions-table {
+    display: none;
+    border: 1px solid #ece8f5;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .rxn-card.expanded .conditions-table { display: block; }
+
+  .ct-head, .ct-row {
+    display: grid;
+    grid-template-columns: 60px 1.6fr 90px 1.4fr;
+    align-items: stretch;
+  }
+  .ct-head {
+    background: #fafaff;
+    border-bottom: 1px solid #ece8f5;
+  }
+  .ct-head > div {
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .ct-row {
+    border-bottom: 1px solid #f0eef5;
+  }
+  .ct-row:last-child { border-bottom: none; }
+  .ct-row > div {
+    padding: 14px 14px;
+    font-size: 13px;
+    color: #4a4f59;
+    line-height: 1.55;
+  }
+  .ct-no {
+    color: #c4c8d2;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+  .stage-line { margin-bottom: 6px; }
+  .stage-line:last-child { margin-bottom: 0; }
+  .stage-line b { color: #1f2329; font-weight: 600; margin-right: 4px; }
+  .stage-line .cond-em { color: #1f2329; font-weight: 500; }
+  .stage-line .solvent { color: #6366f1; }
+  .ct-yield {
+    color: #16a34a;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+  }
+  .ct-yield.empty { color: #c4c8d2; font-weight: 400; font-size: 13px; }
+  .ct-ref .author { color: #1f2329; font-weight: 500; font-size: 13px; }
+  .ct-ref .meta { color: #6b7280; font-size: 12px; line-height: 1.5; display: block; margin-top: 2px; }
+  .ct-ref .meta .journal { color: #6366f1; font-style: italic; }
+  .ct-ref .actions {
+    display: inline-flex; gap: 12px; flex-wrap: wrap;
+    margin-top: 4px;
+    font-size: 12px;
+  }
+  .ct-ref .actions a {
+    color: #6366f1;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .ct-ref .actions a:hover { text-decoration: underline; }
+  .ct-ref .src-tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .ct-ref .src-tag.paper { background: #ecfeff; color: #0891b2; }
+  .ct-ref .src-tag.patent { background: #fef3c7; color: #b45309; }
+
+  /* 物质网格 */
+  .substance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .substance-card {
+    border: 1px solid #e5e5e7;
+    border-radius: 8px;
+    padding: 16px;
+    background: #fff;
+  }
+  .substance-card .cas {
+    font-size: 13px;
+    color: #6366f1;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .substance-card .structure {
+    height: 100px;
+    background: #f9f9fb;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .substance-card .name {
+    font-size: 13px;
+    color: #1f2329;
+    margin-bottom: 4px;
+  }
+  .substance-card .formula {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 12px;
+  }
+  .substance-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #9ca3af;
+  }
+  .sub-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* 加载更多 */
+  .load-more {
+    text-align: center;
+    padding: 24px;
+    color: #9ca3af;
+    font-size: 13px;
+  }
+
+  /* 分页 */
+  .pagination {
+    margin-top: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .page-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #ece8f5;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #4a4f59;
+    font-size: 13px;
+  }
+  .page-btn:hover:not(.active):not(:disabled) {
+    border-color: #c7d2fe;
+    color: #6366f1;
+  }
+  .page-btn.active {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+  }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ============ 编辑检索面板 ============ */
+  .edit-overlay {
+    position: fixed;
+    top: 0; right: 0; bottom: 0; left: 220px;
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+  }
+  .edit-overlay.show { display: flex; }
+  .edit-panel {
+    background: #fff;
+    padding: 14px 24px;
+    border-bottom: 1px solid #ece8f5;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .edit-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #4a4f59;
+    font-size: 14px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .edit-back:hover { background: #f5f3fa; color: #6366f1; }
+  .edit-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #d8d4e6;
+    border-radius: 10px;
+    padding: 9px 14px;
+    transition: all 0.2s;
+  }
+  .edit-input-wrap:focus-within {
+    border-color: #c7d2fe;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.12);
+  }
+  .edit-input-wrap input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 14px;
+    color: #1f2329;
+  }
+  .edit-input-clear {
+    background: #d1d5db;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .edit-input-clear:hover { background: #9ca3af; }
+  .edit-submit {
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    font-size: 14px;
+    padding: 9px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .edit-submit:hover { box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
+  .edit-backdrop {
+    flex: 1;
+    background: rgba(15, 18, 30, 0.45);
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ 左侧导航 ============ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">
+        <span class="num">107</span>
+        <span class="sym">Bh</span>
+      </div>
+      <div class="logo-text">
+        <div class="cn">玻尔</div>
+        <div class="en">Bohrium</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        新对话
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        站内搜索
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          科学导航
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sub-list">
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>订阅</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>期刊库</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>学者</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>科学百科</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>知识库</div>
+        </div>
+      </div>
+
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        实践
+        <span class="arrow">▸</span>
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.5L4 17h16l-6-7.5V2"/><path d="M8 2h8"/></svg>
+        跃迁实验室
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        智算
+        <span class="arrow">▸</span>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          历史对话
+          <span class="arrow">▾</span>
+        </div>
+        <div class="history-list">
+          <div class="history-item">告诉我最近在生…</div>
+          <div class="history-item">告诉我最近在生…</div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="invite-btn">
+        <span>🎁 邀搭子得体验会员</span>
+        <span>→</span>
+      </div>
+      <div class="plan">
+        Basic
+        <span class="upgrade">去升级</span>
+      </div>
+      <div class="quota">
+        <span>✦ 200</span>
+        <span>💬 60次</span>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="avatar"></div>
+      <span>🌐 CN ▾</span>
+      <span>🔔</span>
+      <span>?</span>
+    </div>
+
+    <div class="collapse-handle">‹</div>
+  </aside>
+
+  <!-- ============ 主内容区 ============ -->
+  <div class="main-area">
+
+    <!-- 顶部栏 -->
+    <header class="topbar">
+      <button class="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        返回
+      </button>
+      <div class="search-keyword">
+        <span>检索</span> "C9H8O4"
+      </div>
+      <button class="edit-btn" id="editBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        编辑
+      </button>
+    </header>
+
+    <!-- Tab 栏 -->
+    <div class="tab-bar">
+      <div class="tab-item active">
+        <span class="badge"><span class="highlight">专利</span> 16,266</span>
+        <span style="color:#9ca3af;margin-left:4px;">含中文 5,473</span>
+      </div>
+      <div class="tab-item">
+        <span class="badge"><span class="highlight">论文</span> 85,843</span>
+      </div>
+      <div class="tab-item">
+        <span class="badge"><span class="highlight">物质</span> 727</span>
+      </div>
+    </div>
+
+    <!-- 内容区 -->
+    <div class="content-wrapper">
+
+      <!-- 左侧面板 -->
+      <aside class="left-panel">
+        <div class="filter-box">
+          <div class="filter-title">
+            筛选
+            <span class="filter-reset">重置</span>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-section-title">
+              公开年
+              <span class="arrow">▾</span>
+            </div>
+            <div class="filter-options">
+              <label class="filter-option">
+                <input type="radio" name="pub-year" />
+                <span class="label">2026</span>
+                <span class="count">3,245</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="pub-year" />
+                <span class="label">2025</span>
+                <span class="count">4,567</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="pub-year" />
+                <span class="label">2024</span>
+                <span class="count">3,890</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="pub-year" />
+                <span class="label">2023</span>
+                <span class="count">2,345</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="pub-year" />
+                <span class="label">2022</span>
+                <span class="count">1,234</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="pub-year" />
+                <span class="label">更早</span>
+                <span class="count">985</span>
+              </label>
+              <div class="range-row">
+                <input type="number" placeholder="起始年" />
+                <span class="dash">—</span>
+                <input type="number" placeholder="结束年" />
+              </div>
+              <button class="range-apply">应用范围</button>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-section-title">
+              申请年
+              <span class="arrow">▾</span>
+            </div>
+            <div class="filter-options">
+              <label class="filter-option">
+                <input type="radio" name="app-year" />
+                <span class="label">2025</span>
+                <span class="count">4,123</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="app-year" />
+                <span class="label">2024</span>
+                <span class="count">3,456</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="app-year" />
+                <span class="label">2023</span>
+                <span class="count">2,789</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="app-year" />
+                <span class="label">2022</span>
+                <span class="count">1,876</span>
+              </label>
+              <label class="filter-option">
+                <input type="radio" name="app-year" />
+                <span class="label">更早</span>
+                <span class="count">4,022</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-section-title">
+              专利局
+              <span class="arrow">▾</span>
+            </div>
+            <div class="filter-options">
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">中国 (CN)</span>
+                <span class="count">5,473</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">美国 (US)</span>
+                <span class="count">4,256</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">欧洲 (EP)</span>
+                <span class="count">2,834</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">WIPO (WO)</span>
+                <span class="count">1,987</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">日本 (JP)</span>
+                <span class="count">1,234</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">韩国 (KR)</span>
+                <span class="count">482</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-section collapsed">
+            <div class="filter-section-title">
+              法律状态
+              <span class="arrow">▾</span>
+            </div>
+            <div class="filter-options">
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">授权</span>
+                <span class="count">8,234</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">公开</span>
+                <span class="count">5,678</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">失效</span>
+                <span class="count">1,234</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">撤回</span>
+                <span class="count">890</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-section collapsed">
+            <div class="filter-section-title">
+              专利类型
+              <span class="arrow">▾</span>
+            </div>
+            <div class="filter-options">
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">发明专利</span>
+                <span class="count">12,456</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">实用新型</span>
+                <span class="count">2,345</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" />
+                <span class="label">外观设计</span>
+                <span class="count">1,465</span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+
+      <!-- 右侧结果 -->
+      <main class="results-panel">
+        <div class="result-head">
+          <div class="result-count">搜索到 <b>16,266</b> 条专利</div>
+        </div>
+
+        <div class="patent-list">
+
+          <!-- 专利 1 -->
+          <div class="patent-item">
+            <div class="patent-index">1</div>
+            <div class="patent-title">Synthesis of aspirin derivatives with enhanced anti-inflammatory activity</div>
+            <div class="patent-title-cn">具有增强抗炎活性的阿司匹林衍生物的合成</div>
+            <div class="patent-meta">
+              <span class="patent-num">CN115340456A</span>
+              <span class="patent-office">
+                <span class="office-dot cn"></span>
+                CN
+              </span>
+            </div>
+            <div class="patent-dates">
+              <span class="date-item">📅 申请：2025.06.15</span>
+              <span class="date-item">📅 公开：2026.03.22</span>
+            </div>
+            <div class="patent-assignee">
+              <span class="assignee-label">申请人：</span>
+              中国科学院上海药物研究所
+            </div>
+            <div class="patent-stats">
+              <span class="stat-item">👁 3.2K</span>
+              <span class="stat-item">⚡ 优先权：CN202510123456.7</span>
+            </div>
+            <div class="patent-actions">
+              <div class="action-left">
+                <button class="action-btn" data-toggle="abstract-0">
+                  摘要 <span style="color:#9ca3af">▼</span>
+                </button>
+                <button class="action-btn" data-toggle="substance-0">
+                  物质 <span class="count">6</span> <span style="color:#9ca3af">▼</span>
+                </button>
+                <button class="action-btn" data-toggle="reaction-0">
+                  反应 <span class="count">2</span> <span style="color:#9ca3af">▼</span>
+                </button>
+              </div>
+              <div class="action-right">
+                <button class="icon-btn">↗</button>
+                <button class="icon-btn">⭐ 收藏</button>
+              </div>
+            </div>
+
+            <!-- 摘要展开 -->
+            <div class="expand-section" data-content="abstract-0">
+              <div class="abstract-content">
+                本发明提供了一类新型阿司匹林衍生物及其制备方法。所述衍生物通过在阿司匹林的羧基或羟基位点引入功能性基团，显著提高了抗炎活性和生物利用度。体外实验表明，该类化合物对COX-2具有选择性抑制作用，且胃肠道副作用显著降低。本发明还涉及包含所述衍生物的药物组合物及其在制备抗炎药物中的应用。
+              </div>
+            </div>
+
+            <!-- 物质展开 -->
+            <div class="expand-section" data-content="substance-0">
+              <div class="substance-grid">
+                <div class="substance-card">
+                  <div class="cas">CAS 50-78-2</div>
+                  <div class="structure">
+                    <svg width="60" height="60" viewBox="0 0 60 60">
+                      <polygon points="30,10 10,30 30,50 50,30" fill="none" stroke="#6366f1" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="name">aspirin</div>
+                  <div class="formula">C₉H₈O₄</div>
+                  <div class="substance-stats">
+                    <span class="sub-stat">▶ 5,084</span>
+                    <span class="sub-stat">📄 38,358</span>
+                  </div>
+                </div>
+                <div class="substance-card">
+                  <div class="cas">CAS 69-72-7</div>
+                  <div class="structure">
+                    <svg width="60" height="60" viewBox="0 0 60 60">
+                      <polygon points="30,10 10,30 30,50 50,30" fill="none" stroke="#6366f1" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="name">salicylic acid</div>
+                  <div class="formula">C₇H₆O₃</div>
+                  <div class="substance-stats">
+                    <span class="sub-stat">▶ 3,256</span>
+                    <span class="sub-stat">📄 28,456</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 反应展开 -->
+            <div class="expand-section" data-content="reaction-0">
+              <!-- 反应卡片 1：水杨酸乙酰化 -->
+              <div class="rxn-card expanded">
+                <div class="rxn-head">
+                  <span class="rxn-index">1</span>
+                  <span class="rxn-id"><span class="label">Reaction ID</span>fyonhsuwn</span>
+                  <span class="rxn-classify">
+                    <span class="rxn-tag">Preparation</span>
+                    <span class="rxn-tag">Acylation</span>
+                  </span>
+                  <span class="rxn-head-spacer"></span>
+                  <span class="rxn-head-meta">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    2 篇关联来源
+                  </span>
+                </div>
+                <div class="rxn-equation">
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">salicylic acid</div>
+                  </div>
+                  <div class="op">+</div>
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">acetic anhydride</div>
+                  </div>
+                  <div class="rxn-arrow">
+                    <span class="flask-icon">⚗</span>
+                    <div class="arrow-line"></div>
+                  </div>
+                  <div class="mol-card product">
+                    <div class="role">Product</div>
+                    <div class="name">aspirin</div>
+                  </div>
+                </div>
+                <div class="conditions-toggle">
+                  <span class="ct-count">2</span>
+                  <span class="ct-text">反应条件</span>
+                  <span class="ct-hint">查看不同来源的实验条件、产率与来源</span>
+                  <span class="ct-caret">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+                <div class="conditions-table">
+                  <div class="ct-head">
+                    <div>#</div>
+                    <div>反应条件</div>
+                    <div>产率</div>
+                    <div>关联来源</div>
+                  </div>
+                  <div class="ct-row">
+                    <div class="ct-no">1</div>
+                    <div>
+                      <div class="stage-line">
+                        <b>Stage #1:</b>
+                        With <span class="cond-em">H₂SO₄</span> at <span class="cond-em">50-60 °C</span> for <span class="cond-em">2 h</span>;
+                        <span class="solvent">Solvent: acetic acid</span>
+                      </div>
+                    </div>
+                    <div><span class="ct-yield">95%</span></div>
+                    <div class="ct-ref">
+                      <span class="src-tag patent">专利</span>
+                      <span class="author">CN115340456A · 中国科学院上海药物研究所</span>
+                      <span class="meta">公开日 2026-03-22</span>
+                      <span class="actions"><a>全文 ↗</a></span>
+                    </div>
+                  </div>
+                  <div class="ct-row">
+                    <div class="ct-no">2</div>
+                    <div>
+                      <div class="stage-line">
+                        <b>Stage #1:</b>
+                        With <span class="cond-em">H₂SO₄</span> at <span class="cond-em">70 °C</span> for <span class="cond-em">1.5 h</span>;
+                        <span class="solvent">Solvent: acetic anhydride</span>
+                      </div>
+                      <div class="stage-line">
+                        <b>Stage #2:</b>
+                        Recrystallization from <span class="solvent">ethanol/water</span>
+                      </div>
+                    </div>
+                    <div><span class="ct-yield">92%</span></div>
+                    <div class="ct-ref">
+                      <span class="src-tag patent">专利</span>
+                      <span class="author">CN115340456A · 中国科学院上海药物研究所</span>
+                      <span class="meta">公开日 2026-03-22</span>
+                      <span class="actions"><a>全文 ↗</a></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 反应卡片 2：酰氯化反应 -->
+              <div class="rxn-card">
+                <div class="rxn-head">
+                  <span class="rxn-index">2</span>
+                  <span class="rxn-id"><span class="label">Reaction ID</span>fyonhsuwn-2</span>
+                  <span class="rxn-classify">
+                    <span class="rxn-tag">Chlorination</span>
+                  </span>
+                  <span class="rxn-head-spacer"></span>
+                  <span class="rxn-head-meta">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    1 篇关联来源
+                  </span>
+                </div>
+                <div class="rxn-equation">
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">aspirin</div>
+                  </div>
+                  <div class="op">+</div>
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">thionyl chloride</div>
+                  </div>
+                  <div class="rxn-arrow">
+                    <span class="flask-icon">⚗</span>
+                    <div class="arrow-line"></div>
+                  </div>
+                  <div class="mol-card product">
+                    <div class="role">Product</div>
+                    <div class="name">acetyl salicyloyl chloride</div>
+                  </div>
+                </div>
+                <div class="conditions-toggle">
+                  <span class="ct-count">1</span>
+                  <span class="ct-text">反应条件</span>
+                  <span class="ct-hint">查看不同来源的实验条件、产率与来源</span>
+                  <span class="ct-caret">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+                <div class="conditions-table">
+                  <div class="ct-head">
+                    <div>#</div>
+                    <div>反应条件</div>
+                    <div>产率</div>
+                    <div>关联来源</div>
+                  </div>
+                  <div class="ct-row">
+                    <div class="ct-no">1</div>
+                    <div>
+                      <div class="stage-line">
+                        <b>Stage #1:</b>
+                        With <span class="cond-em">SOCl₂</span> at <span class="cond-em">reflux</span> for <span class="cond-em">3 h</span>;
+                        <span class="solvent">Solvent: dichloromethane</span>
+                      </div>
+                    </div>
+                    <div><span class="ct-yield">88%</span></div>
+                    <div class="ct-ref">
+                      <span class="src-tag patent">专利</span>
+                      <span class="author">CN115340456A · 中国科学院上海药物研究所</span>
+                      <span class="meta">公开日 2026-03-22</span>
+                      <span class="actions"><a>全文 ↗</a></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 专利 2 -->
+          <div class="patent-item">
+            <div class="patent-index">2</div>
+            <div class="patent-title">Method for preparing caffeic acid and derivatives thereof using enzymatic catalysis</div>
+            <div class="patent-title-cn">一种酶催化制备咖啡酸及其衍生物的方法</div>
+            <div class="patent-meta">
+              <span class="patent-num">CN114567890B</span>
+              <span class="patent-office">
+                <span class="office-dot cn"></span>
+                CN
+              </span>
+            </div>
+            <div class="patent-dates">
+              <span class="date-item">📅 申请：2024.08.20</span>
+              <span class="date-item">📅 公开：2026.01.15</span>
+            </div>
+            <div class="patent-assignee">
+              <span class="assignee-label">申请人：</span>
+              浙江大学
+            </div>
+            <div class="patent-stats">
+              <span class="stat-item">👁 2.8K</span>
+              <span class="stat-item">⚡ 优先权：CN202410987654.3</span>
+            </div>
+            <div class="patent-actions">
+              <div class="action-left">
+                <button class="action-btn" data-toggle="abstract-1">
+                  摘要 <span style="color:#9ca3af">▼</span>
+                </button>
+                <button class="action-btn" data-toggle="substance-1">
+                  物质 <span class="count">3</span> <span style="color:#9ca3af">▼</span>
+                </button>
+                <button class="action-btn" data-toggle="reaction-1">
+                  反应 <span class="count">1</span> <span style="color:#9ca3af">▼</span>
+                </button>
+              </div>
+              <div class="action-right">
+                <button class="icon-btn">↗</button>
+                <button class="icon-btn">⭐ 收藏</button>
+              </div>
+            </div>
+
+            <!-- 摘要展开 -->
+            <div class="expand-section" data-content="abstract-1">
+              <div class="abstract-content">
+                本发明涉及一种利用固定化酶催化制备咖啡酸及其衍生物的方法。该方法以对羟基苯丙酸为底物，在固定化酪氨酸酶的作用下，于温和条件下高效转化为咖啡酸。该方法具有反应条件温和、环境友好、产物纯度高等优点，适合工业化生产。本发明还提供了所述方法在食品添加剂和化妆品中的应用。
+              </div>
+            </div>
+
+            <!-- 物质展开 -->
+            <div class="expand-section" data-content="substance-1">
+              <div class="substance-grid">
+                <div class="substance-card">
+                  <div class="cas">CAS 331-39-5</div>
+                  <div class="structure">
+                    <svg width="60" height="60" viewBox="0 0 60 60">
+                      <polygon points="30,10 50,30 30,50 10,30" fill="none" stroke="#6366f1" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="name">caffeic acid</div>
+                  <div class="formula">C₉H₈O₄</div>
+                  <div class="substance-stats">
+                    <span class="sub-stat">▶ 15,678</span>
+                    <span class="sub-stat">📄 112,456</span>
+                  </div>
+                </div>
+                <div class="substance-card">
+                  <div class="cas">CAS 7400-08-0</div>
+                  <div class="structure">
+                    <svg width="60" height="60" viewBox="0 0 60 60">
+                      <circle cx="30" cy="30" r="20" fill="none" stroke="#6366f1" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="name">p-hydroxyphenylpropionic acid</div>
+                  <div class="formula">C₉H₁₀O₃</div>
+                  <div class="substance-stats">
+                    <span class="sub-stat">▶ 892</span>
+                    <span class="sub-stat">📄 4,567</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 反应展开 -->
+            <div class="expand-section" data-content="reaction-1">
+              <div class="rxn-card expanded">
+                <div class="rxn-head">
+                  <span class="rxn-index">1</span>
+                  <span class="rxn-id"><span class="label">Reaction ID</span>fxepoxopn</span>
+                  <span class="rxn-classify">
+                    <span class="rxn-tag">Preparation</span>
+                    <span class="rxn-tag">Enzymatic</span>
+                  </span>
+                  <span class="rxn-head-spacer"></span>
+                  <span class="rxn-head-meta">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    1 篇关联来源
+                  </span>
+                </div>
+                <div class="rxn-equation">
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">p-hydroxyphenylpropionic acid</div>
+                  </div>
+                  <div class="rxn-arrow">
+                    <span class="flask-icon">⚗</span>
+                    <div class="arrow-line"></div>
+                  </div>
+                  <div class="mol-card product">
+                    <div class="role">Product</div>
+                    <div class="name">caffeic acid</div>
+                  </div>
+                </div>
+                <div class="conditions-toggle">
+                  <span class="ct-count">1</span>
+                  <span class="ct-text">反应条件</span>
+                  <span class="ct-hint">查看不同来源的实验条件、产率与来源</span>
+                  <span class="ct-caret">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+                <div class="conditions-table">
+                  <div class="ct-head">
+                    <div>#</div>
+                    <div>反应条件</div>
+                    <div>产率</div>
+                    <div>关联来源</div>
+                  </div>
+                  <div class="ct-row">
+                    <div class="ct-no">1</div>
+                    <div>
+                      <div class="stage-line">
+                        <b>Stage #1:</b>
+                        With <span class="cond-em">tyrosinase</span> at <span class="cond-em">30 °C</span> for <span class="cond-em">4 h</span>;
+                        <span class="solvent">pH 7.0 phosphate buffer</span>
+                      </div>
+                    </div>
+                    <div><span class="ct-yield">87%</span></div>
+                    <div class="ct-ref">
+                      <span class="src-tag patent">专利</span>
+                      <span class="author">CN114567890B · 浙江大学</span>
+                      <span class="meta">公开日 2026-01-15</span>
+                      <span class="actions"><a>全文 ↗</a></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 专利 3 -->
+          <div class="patent-item">
+            <div class="patent-index">3</div>
+            <div class="patent-title">Composition comprising aspirin and method of use for cardiovascular disease prevention</div>
+            <div class="patent-title-cn">包含阿司匹林的组合物及用于预防心血管疾病的方法</div>
+            <div class="patent-meta">
+              <span class="patent-num">US20250012345A1</span>
+              <span class="patent-office">
+                <span class="office-dot us"></span>
+                US
+              </span>
+            </div>
+            <div class="patent-dates">
+              <span class="date-item">📅 申请：2025.03.10</span>
+              <span class="date-item">📅 公开：2026.05.18</span>
+            </div>
+            <div class="patent-assignee">
+              <span class="assignee-label">申请人：</span>
+              Pfizer Inc.
+            </div>
+            <div class="patent-stats">
+              <span class="stat-item">👁 5.6K</span>
+              <span class="stat-item">⚡ 优先权：US63/567,890</span>
+            </div>
+            <div class="patent-actions">
+              <div class="action-left">
+                <button class="action-btn" data-toggle="abstract-2">
+                  摘要 <span style="color:#9ca3af">▼</span>
+                </button>
+                <button class="action-btn" data-toggle="substance-2">
+                  物质 <span class="count">5</span> <span style="color:#9ca3af">▼</span>
+                </button>
+                <button class="action-btn" data-toggle="reaction-2">
+                  反应 <span class="count">1</span> <span style="color:#9ca3af">▼</span>
+                </button>
+              </div>
+              <div class="action-right">
+                <button class="icon-btn">↗</button>
+                <button class="icon-btn">⭐ 收藏</button>
+              </div>
+            </div>
+
+            <!-- 摘要展开 -->
+            <div class="expand-section" data-content="abstract-2">
+              <div class="abstract-content">
+                The present disclosure provides compositions comprising aspirin and one or more additional therapeutic agents for the prevention and treatment of cardiovascular diseases. The compositions described herein exhibit synergistic effects in reducing thrombus formation and inflammation. Methods of using the compositions for preventing myocardial infarction, stroke, and other cardiovascular events in high-risk patients are also provided.
+              </div>
+            </div>
+
+            <!-- 物质展开 -->
+            <div class="expand-section" data-content="substance-2">
+              <div class="substance-grid">
+                <div class="substance-card">
+                  <div class="cas">CAS 50-78-2</div>
+                  <div class="structure">
+                    <svg width="60" height="60" viewBox="0 0 60 60">
+                      <polygon points="30,10 10,30 30,50 50,30" fill="none" stroke="#6366f1" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="name">aspirin</div>
+                  <div class="formula">C₉H₈O₄</div>
+                  <div class="substance-stats">
+                    <span class="sub-stat">▶ 5,084</span>
+                    <span class="sub-stat">📄 38,358</span>
+                  </div>
+                </div>
+                <div class="substance-card">
+                  <div class="cas">CAS 79902-63-9</div>
+                  <div class="structure">
+                    <svg width="60" height="60" viewBox="0 0 60 60">
+                      <ellipse cx="30" cy="30" rx="20" ry="15" fill="none" stroke="#6366f1" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="name">atorvastatin</div>
+                  <div class="formula">C₃₃H₃₅FN₂O₅</div>
+                  <div class="substance-stats">
+                    <span class="sub-stat">▶ 8,901</span>
+                    <span class="sub-stat">📄 45,678</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 反应展开 -->
+            <div class="expand-section" data-content="reaction-2">
+              <div class="rxn-card expanded">
+                <div class="rxn-head">
+                  <span class="rxn-index">1</span>
+                  <span class="rxn-id"><span class="label">Reaction ID</span>fzbnredz</span>
+                  <span class="rxn-classify">
+                    <span class="rxn-tag">Formulation</span>
+                    <span class="rxn-tag outline">Combination</span>
+                  </span>
+                  <span class="rxn-head-spacer"></span>
+                  <span class="rxn-head-meta">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    1 篇关联来源
+                  </span>
+                </div>
+                <div class="rxn-equation">
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">aspirin</div>
+                  </div>
+                  <div class="op">+</div>
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">atorvastatin</div>
+                  </div>
+                  <div class="rxn-arrow">
+                    <span class="flask-icon">⚗</span>
+                    <div class="arrow-line"></div>
+                  </div>
+                  <div class="mol-card product">
+                    <div class="role">Product</div>
+                    <div class="name">aspirin-statin combination</div>
+                  </div>
+                </div>
+                <div class="conditions-toggle">
+                  <span class="ct-count">1</span>
+                  <span class="ct-text">反应条件</span>
+                  <span class="ct-hint">查看不同来源的实验条件、产率与来源</span>
+                  <span class="ct-caret">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+                <div class="conditions-table">
+                  <div class="ct-head">
+                    <div>#</div>
+                    <div>反应条件</div>
+                    <div>产率</div>
+                    <div>关联来源</div>
+                  </div>
+                  <div class="ct-row">
+                    <div class="ct-no">1</div>
+                    <div>
+                      <div class="stage-line">
+                        <b>Stage #1:</b>
+                        Enteric coating: <span class="cond-em">Eudragit L30D</span>;
+                        <span class="solvent">Core: aspirin + atorvastatin</span>
+                      </div>
+                      <div class="stage-line">
+                        <b>Stage #2:</b>
+                        Compression at <span class="cond-em">25 °C</span>
+                      </div>
+                    </div>
+                    <div><span class="ct-yield">—</span></div>
+                    <div class="ct-ref">
+                      <span class="src-tag patent">专利</span>
+                      <span class="author">US20250012345A1 · Pfizer Inc.</span>
+                      <span class="meta">公开日 2026-05-18</span>
+                      <span class="actions"><a>全文 ↗</a></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 专利 4 -->
+          <div class="patent-item">
+            <div class="patent-index">4</div>
+            <div class="patent-title">Process for the synthesis of 2-acetoxybenzoic acid from salicylic acid and acetic anhydride in a continuous flow reactor</div>
+            <div class="patent-title-cn">一种在连续流反应器中由水杨酸和乙酸酐合成乙酰水杨酸的方法</div>
+            <div class="patent-meta">
+              <span class="patent-num">EP4123456A1</span>
+              <span class="patent-office">
+                <span class="office-dot ep"></span>
+                EP
+              </span>
+            </div>
+            <div class="patent-dates">
+              <span class="date-item">📅 申请：2024.11.05</span>
+              <span class="date-item">📅 公开：2026.04.12</span>
+            </div>
+            <div class="patent-assignee">
+              <span class="assignee-label">申请人：</span>
+              BASF SE
+            </div>
+            <div class="patent-stats">
+              <span class="stat-item">👁 1.9K</span>
+              <span class="stat-item">⚡ 优先权：EP20240012345</span>
+            </div>
+            <div class="patent-actions">
+              <div class="action-left">
+                <button class="action-btn" data-toggle="abstract-3">
+                  摘要 <span style="color:#9ca3af">▼</span>
+                </button>
+                <button class="action-btn" data-toggle="substance-3">
+                  物质 <span class="count">2</span> <span style="color:#9ca3af">▼</span>
+                </button>
+                <button class="action-btn" data-toggle="reaction-3">
+                  反应 <span class="count">1</span> <span style="color:#9ca3af">▼</span>
+                </button>
+              </div>
+              <div class="action-right">
+                <button class="icon-btn">↗</button>
+                <button class="icon-btn">⭐ 收藏</button>
+              </div>
+            </div>
+
+            <!-- 摘要展开 -->
+            <div class="expand-section" data-content="abstract-3">
+              <div class="abstract-content">
+                The invention relates to a continuous flow process for the synthesis of 2-acetoxybenzoic acid (aspirin) from salicylic acid and acetic anhydride. The process employs a micro-channel reactor with precise temperature control (80-100°C) and short residence times (2-5 minutes), achieving yields greater than 95%. The continuous flow method offers significant advantages over conventional batch processes, including improved heat management, reduced side reactions, and enhanced product purity.
+              </div>
+            </div>
+
+            <!-- 物质展开 -->
+            <div class="expand-section" data-content="substance-3">
+              <div class="substance-grid">
+                <div class="substance-card">
+                  <div class="cas">CAS 50-78-2</div>
+                  <div class="structure">
+                    <svg width="60" height="60" viewBox="0 0 60 60">
+                      <polygon points="30,10 10,30 30,50 50,30" fill="none" stroke="#6366f1" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="name">aspirin</div>
+                  <div class="formula">C₉H₈O₄</div>
+                  <div class="substance-stats">
+                    <span class="sub-stat">▶ 5,084</span>
+                    <span class="sub-stat">📄 38,358</span>
+                  </div>
+                </div>
+                <div class="substance-card">
+                  <div class="cas">CAS 69-72-7</div>
+                  <div class="structure">
+                    <svg width="60" height="60" viewBox="0 0 60 60">
+                      <polygon points="30,10 10,30 30,50 50,30" fill="none" stroke="#6366f1" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="name">salicylic acid</div>
+                  <div class="formula">C₇H₆O₃</div>
+                  <div class="substance-stats">
+                    <span class="sub-stat">▶ 3,256</span>
+                    <span class="sub-stat">📄 28,456</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 反应展开 -->
+            <div class="expand-section" data-content="reaction-3">
+              <div class="rxn-card expanded">
+                <div class="rxn-head">
+                  <span class="rxn-index">1</span>
+                  <span class="rxn-id"><span class="label">Reaction ID</span>gabnqrxz</span>
+                  <span class="rxn-classify">
+                    <span class="rxn-tag">Preparation</span>
+                    <span class="rxn-tag">Continuous Flow</span>
+                  </span>
+                  <span class="rxn-head-spacer"></span>
+                  <span class="rxn-head-meta">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    1 篇关联来源
+                  </span>
+                </div>
+                <div class="rxn-equation">
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">salicylic acid</div>
+                  </div>
+                  <div class="op">+</div>
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">acetic anhydride</div>
+                  </div>
+                  <div class="rxn-arrow">
+                    <span class="flask-icon">⚗</span>
+                    <div class="arrow-line"></div>
+                  </div>
+                  <div class="mol-card product">
+                    <div class="role">Product</div>
+                    <div class="name">aspirin</div>
+                  </div>
+                </div>
+                <div class="conditions-toggle">
+                  <span class="ct-count">1</span>
+                  <span class="ct-text">反应条件</span>
+                  <span class="ct-hint">查看不同来源的实验条件、产率与来源</span>
+                  <span class="ct-caret">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+                <div class="conditions-table">
+                  <div class="ct-head">
+                    <div>#</div>
+                    <div>反应条件</div>
+                    <div>产率</div>
+                    <div>关联来源</div>
+                  </div>
+                  <div class="ct-row">
+                    <div class="ct-no">1</div>
+                    <div>
+                      <div class="stage-line">
+                        <b>Stage #1:</b>
+                        Micro-channel reactor at <span class="cond-em">80-100 °C</span> for <span class="cond-em">2-5 min</span>;
+                        <span class="solvent">Solvent: acetic acid</span>
+                      </div>
+                    </div>
+                    <div><span class="ct-yield">&gt;95%</span></div>
+                    <div class="ct-ref">
+                      <span class="src-tag patent">专利</span>
+                      <span class="author">EP4123456A1 · BASF SE</span>
+                      <span class="meta">公开日 2026-04-12</span>
+                      <span class="actions"><a>全文 ↗</a></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 专利 5 -->
+          <div class="patent-item">
+            <div class="patent-index">5</div>
+            <div class="patent-title">Aspirin-containing microneedle patch for transdermal delivery and preparation method thereof</div>
+            <div class="patent-title-cn">一种含阿司匹林的微针贴片及其制备方法</div>
+            <div class="patent-meta">
+              <span class="patent-num">WO2026123456A1</span>
+              <span class="patent-office">
+                <span class="office-dot wo"></span>
+                WO
+              </span>
+            </div>
+            <div class="patent-dates">
+              <span class="date-item">📅 申请：2025.09.20</span>
+              <span class="date-item">📅 公开：2026.06.01</span>
+            </div>
+            <div class="patent-assignee">
+              <span class="assignee-label">申请人：</span>
+              清华大学
+            </div>
+            <div class="patent-stats">
+              <span class="stat-item">👁 4.2K</span>
+              <span class="stat-item">⚡ 优先权：CN202512345678.9</span>
+            </div>
+            <div class="patent-actions">
+              <div class="action-left">
+                <button class="action-btn" data-toggle="abstract-4">
+                  摘要 <span style="color:#9ca3af">▼</span>
+                </button>
+                <button class="action-btn" data-toggle="substance-4">
+                  物质 <span class="count">4</span> <span style="color:#9ca3af">▼</span>
+                </button>
+                <button class="action-btn" data-toggle="reaction-4">
+                  反应 <span class="count">1</span> <span style="color:#9ca3af">▼</span>
+                </button>
+              </div>
+              <div class="action-right">
+                <button class="icon-btn">↗</button>
+                <button class="icon-btn">⭐ 收藏</button>
+              </div>
+            </div>
+
+            <!-- 摘要展开 -->
+            <div class="expand-section" data-content="abstract-4">
+              <div class="abstract-content">
+                本发明提供了一种含阿司匹林的微针贴片及其制备方法。所述微针贴片由可溶性高分子材料与阿司匹林复合制成，可通过透皮给药实现阿司匹林的持续释放。微针贴片包含阵列式微针结构，能够穿透皮肤角质层，显著提高阿司匹林的经皮吸收率。动物实验表明，该微针贴片具有良好的降血小板聚集效果，且无胃肠道刺激副作用。
+              </div>
+            </div>
+
+            <!-- 物质展开 -->
+            <div class="expand-section" data-content="substance-4">
+              <div class="substance-grid">
+                <div class="substance-card">
+                  <div class="cas">CAS 50-78-2</div>
+                  <div class="structure">
+                    <svg width="60" height="60" viewBox="0 0 60 60">
+                      <polygon points="30,10 10,30 30,50 50,30" fill="none" stroke="#6366f1" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="name">aspirin</div>
+                  <div class="formula">C₉H₈O₄</div>
+                  <div class="substance-stats">
+                    <span class="sub-stat">▶ 5,084</span>
+                    <span class="sub-stat">📄 38,358</span>
+                  </div>
+                </div>
+                <div class="substance-card">
+                  <div class="cas">CAS 9004-61-9</div>
+                  <div class="structure">
+                    <svg width="60" height="60" viewBox="0 0 60 60">
+                      <circle cx="30" cy="30" r="20" fill="none" stroke="#6366f1" stroke-width="2"/>
+                      <circle cx="30" cy="30" r="10" fill="none" stroke="#6366f1" stroke-width="1" stroke-dasharray="3"/>
+                    </svg>
+                  </div>
+                  <div class="name">hyaluronic acid</div>
+                  <div class="formula">(C₁₄H₂₁NO₁₁)ₙ</div>
+                  <div class="substance-stats">
+                    <span class="sub-stat">▶ 12,345</span>
+                    <span class="sub-stat">📄 67,890</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 反应展开 -->
+            <div class="expand-section" data-content="reaction-4">
+              <div class="rxn-card expanded">
+                <div class="rxn-head">
+                  <span class="rxn-index">1</span>
+                  <span class="rxn-id"><span class="label">Reaction ID</span>hacnqrst</span>
+                  <span class="rxn-classify">
+                    <span class="rxn-tag">Formulation</span>
+                    <span class="rxn-tag outline">Microneedle</span>
+                  </span>
+                  <span class="rxn-head-spacer"></span>
+                  <span class="rxn-head-meta">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    1 篇关联来源
+                  </span>
+                </div>
+                <div class="rxn-equation">
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">aspirin</div>
+                  </div>
+                  <div class="op">+</div>
+                  <div class="mol-card">
+                    <div class="role">Reactant</div>
+                    <div class="name">hyaluronic acid</div>
+                  </div>
+                  <div class="rxn-arrow">
+                    <span class="flask-icon">⚗</span>
+                    <div class="arrow-line"></div>
+                  </div>
+                  <div class="mol-card product">
+                    <div class="role">Product</div>
+                    <div class="name">microneedle patch</div>
+                  </div>
+                </div>
+                <div class="conditions-toggle">
+                  <span class="ct-count">1</span>
+                  <span class="ct-text">反应条件</span>
+                  <span class="ct-hint">查看不同来源的实验条件、产率与来源</span>
+                  <span class="ct-caret">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+                <div class="conditions-table">
+                  <div class="ct-head">
+                    <div>#</div>
+                    <div>反应条件</div>
+                    <div>产率</div>
+                    <div>关联来源</div>
+                  </div>
+                  <div class="ct-row">
+                    <div class="ct-no">1</div>
+                    <div>
+                      <div class="stage-line">
+                        <b>Stage #1:</b>
+                        Micromolding at <span class="cond-em">25 °C</span> for <span class="cond-em">12 h</span>;
+                        <span class="solvent">Vacuum drying</span>
+                      </div>
+                    </div>
+                    <div><span class="ct-yield">—</span></div>
+                    <div class="ct-ref">
+                      <span class="src-tag patent">专利</span>
+                      <span class="author">WO2026123456A1 · 清华大学</span>
+                      <span class="meta">公开日 2026-06-01</span>
+                      <span class="actions"><a>全文 ↗</a></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination">
+          <button class="page-btn" disabled>‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">4</button>
+          <button class="page-btn">5</button>
+          <span style="color:#9ca3af; padding: 0 4px;">…</span>
+          <button class="page-btn">1,356</button>
+          <button class="page-btn">›</button>
+        </div>
+
+        <div class="load-more">— 已显示 5 条结果 —</div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 编辑检索面板 ============ -->
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-panel">
+    <button class="edit-back" id="editClose">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      返回
+    </button>
+    <div class="edit-input-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="editInput" type="text" value="C9H8O4" />
+      <button class="edit-input-clear" id="editClear" title="清空">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <button class="edit-submit">搜索</button>
+  </div>
+  <div class="edit-backdrop" id="editBackdrop"></div>
+</div>
+
+<script>
+  // 筛选折叠
+  document.querySelectorAll('.filter-section-title').forEach(h => {
+    h.onclick = () => h.parentElement.classList.toggle('collapsed');
+  });
+
+  // Tab 切换
+  document.querySelectorAll('.tab-item').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+
+  // 展开/收起功能
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.toggle;
+      const patentItem = btn.closest('.patent-item');
+      const expandEl = patentItem.querySelector(`.expand-section[data-content="${target}"]`);
+      
+      if (!expandEl) return;
+      
+      const isShow = expandEl.classList.contains('show');
+      
+      // 关闭同一专利下的所有展开
+      patentItem.querySelectorAll('.expand-section.show').forEach(el => {
+        el.classList.remove('show');
+      });
+      patentItem.querySelectorAll('.action-btn').forEach(b => {
+        b.classList.remove('active');
+      });
+      
+      if (!isShow) {
+        expandEl.classList.add('show');
+        btn.classList.add('active');
+      }
+    });
+  });
+
+  // 反应条件展开/收起
+  document.querySelectorAll('.conditions-toggle').forEach(t => {
+    t.onclick = (e) => {
+      e.stopPropagation();
+      t.closest('.rxn-card').classList.toggle('expanded');
+    };
+  });
+
+  // 编辑检索弹层
+  const editBtn = document.getElementById('editBtn');
+  const editOverlay = document.getElementById('editOverlay');
+  const editClose = document.getElementById('editClose');
+  const editBackdrop = document.getElementById('editBackdrop');
+  const editInput = document.getElementById('editInput');
+
+  function openEdit() {
+    editOverlay.classList.add('show');
+    setTimeout(() => { editInput.focus(); editInput.select(); }, 0);
+  }
+  function closeEdit() { editOverlay.classList.remove('show'); }
+
+  editBtn.addEventListener('click', openEdit);
+  editClose.addEventListener('click', closeEdit);
+  editBackdrop.addEventListener('click', closeEdit);
+  document.getElementById('editClear').addEventListener('click', () => {
+    editInput.value = '';
+    editInput.focus();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && editOverlay.classList.contains('show')) closeEdit();
+  });
+</script>
+
+</body>
+</html>

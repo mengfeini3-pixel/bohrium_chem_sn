@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>化学反应库 - 检索结果</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #1f2329;
+    font-size: 14px;
+  }
+
+  /* ============ 整体布局 ============ */
+  .app { display: flex; min-height: 100vh; }
+
+  /* ============ 左侧 Bohrium 导航栏（与物质页一致） ============ */
+  .sidebar {
+    width: 220px;
+    background: #f0edf5;
+    border-right: 1px solid #e3dff0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .logo { display: flex; align-items: center; gap: 8px; padding: 16px 18px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    border: 2px solid #2c2c2c;
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-weight: 600; line-height: 1;
+    position: relative;
+  }
+  .logo-icon .num { font-size: 8px; position: absolute; top: 2px; right: 3px; }
+  .logo-icon .sym { font-size: 14px; }
+  .logo-text { line-height: 1.2; }
+  .logo-text .cn { font-size: 16px; font-weight: 600; }
+  .logo-text .en { font-size: 11px; color: #6b7280; }
+
+  .nav { padding: 8px 10px; flex: 1; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 6px;
+    cursor: pointer; color: #1f2329; font-size: 14px;
+  }
+  .nav-item:hover { background: #e6e1ee; }
+  .nav-item .icon { width: 16px; height: 16px; opacity: 0.85; flex-shrink: 0; }
+  .sidebar svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-item .arrow { margin-left: auto; font-size: 10px; color: #8a8f99; }
+  .nav-section { margin-top: 4px; }
+  .sub-list { padding-left: 20px; margin-top: 2px; }
+  .sub-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; color: #4a4f59; font-size: 13px;
+  }
+  .sub-item:hover { background: #e6e1ee; }
+  .history-list { padding-left: 20px; }
+  .history-item {
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; color: #4a4f59; font-size: 13px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-item:hover { background: #e6e1ee; }
+
+  .sidebar-footer { border-top: 1px solid #e3dff0; padding: 12px; }
+  .invite-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 6px;
+    background: #e6e1ee; font-size: 13px;
+    cursor: pointer; margin-bottom: 10px;
+  }
+  .plan { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 6px; }
+  .plan .upgrade {
+    margin-left: auto; font-size: 12px; color: #6b7280;
+    background: #fff; padding: 2px 8px; border-radius: 10px;
+    border: 1px solid #e5e7eb; cursor: pointer;
+  }
+  .quota { display: flex; align-items: center; gap: 14px; font-size: 12px; color: #4a4f59; }
+  .quota span { display: inline-flex; align-items: center; gap: 4px; }
+
+  .bottom-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid #e3dff0;
+    font-size: 13px; color: #4a4f59;
+  }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #c4b5fd, #818cf8); }
+
+  .collapse-handle {
+    position: absolute; right: -12px; top: 50%;
+    transform: translateY(-50%);
+    width: 22px; height: 36px;
+    background: #fff; border: 1px solid #e3dff0; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #8a8f99; z-index: 5;
+  }
+
+  /* ============ 主内容区 ============ */
+  .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .topbar {
+    background: #fff; padding: 16px 32px;
+    border-bottom: 1px solid #ece8f5;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    color: #4a4f59; font-size: 14px;
+    padding: 6px 8px; border-radius: 6px;
+  }
+  .back-btn:hover { background: #f5f3fa; color: #6366f1; }
+  .search-info { font-size: 14px; color: #1f2329; }
+  .search-info .keyword { color: #6366f1; font-weight: 500; }
+  .edit-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    color: #6366f1; font-size: 13px;
+    padding: 4px 8px; border-radius: 6px;
+  }
+  .edit-btn:hover { background: #ede9ff; }
+
+  .obj-tabs {
+    background: #fff;
+    padding: 14px 32px 0;
+    border-bottom: 1px solid #ece8f5;
+    display: flex; gap: 8px;
+  }
+  .obj-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px; cursor: pointer;
+    color: #6b7280; font-size: 14px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .obj-tab.active { color: #6366f1; font-weight: 500; border-bottom-color: #6366f1; }
+  .obj-tab .count { color: inherit; font-variant-numeric: tabular-nums; }
+
+  /* ============ 内容两栏 ============ */
+  .content {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0; padding: 0;
+    flex: 1; background: #fff;
+  }
+
+  /* ============ 筛选面板 ============ */
+  .filter-panel {
+    background: #fff;
+    padding: 22px 22px 22px 32px;
+    height: fit-content;
+    border-right: 1px solid #ece8f5;
+    position: sticky;
+    top: 105px;
+  }
+  .filter-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .filter-head .title { font-size: 15px; font-weight: 600; color: #1f2329; }
+  .reset-btn {
+    background: none; border: none; cursor: pointer;
+    color: #6b7280; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .reset-btn:hover { color: #6366f1; }
+
+  .applied { margin: 14px 0; padding-bottom: 14px; border-bottom: 1px solid #f0eef5; }
+  .applied-label { font-size: 12px; color: #9ca3af; margin-bottom: 8px; }
+  .applied-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .applied-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; background: #ede9ff;
+    color: #6366f1; border-radius: 4px; font-size: 12px;
+  }
+  .applied-tag .x { cursor: pointer; color: #818cf8; }
+  .applied-tag .x:hover { color: #4f46e5; }
+
+  .filter-group { border-bottom: 1px solid #f0eef5; padding: 14px 0; }
+  .filter-group:last-child { border-bottom: none; }
+  .group-head {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; font-size: 14px; font-weight: 500;
+    color: #1f2329; margin-bottom: 10px;
+  }
+  .group-head .caret { color: #9ca3af; transition: transform 0.2s; }
+  .filter-group.collapsed .group-head .caret { transform: rotate(-90deg); }
+  .filter-group.collapsed .group-body { display: none; }
+
+  .radio-row, .checkbox-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 2px; cursor: pointer;
+    font-size: 13px; color: #4a4f59;
+  }
+  .radio-row:hover, .checkbox-row:hover { color: #1f2329; }
+  .radio-row input, .checkbox-row input { accent-color: #6366f1; }
+  .radio-row .label-text, .checkbox-row .label-text { flex: 1; }
+  .radio-row .count, .checkbox-row .count {
+    color: #9ca3af; font-size: 12px; font-variant-numeric: tabular-nums;
+  }
+  .range-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .range-row input {
+    flex: 1; width: 0;
+    padding: 6px 8px;
+    border: 1px solid #e5e7eb; border-radius: 6px;
+    font-size: 12px; outline: none;
+  }
+  .range-row input:focus { border-color: #818cf8; }
+  .range-row .dash { color: #9ca3af; font-size: 12px; }
+  .range-apply {
+    margin-top: 8px; width: 100%;
+    padding: 6px 0;
+    background: #ede9ff; color: #6366f1;
+    border: none; border-radius: 6px;
+    cursor: pointer; font-size: 12px;
+  }
+  .range-apply:hover { background: #dcd5ff; }
+
+  /* 筛选项内的迷你搜索框 */
+  .search-mini {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid #e5e7eb; border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .search-mini:focus-within { border-color: #c7d2fe; }
+  .search-mini input {
+    flex: 1; border: none; outline: none;
+    background: transparent;
+    font-size: 12px; color: #1f2329;
+  }
+  .show-more {
+    margin-top: 6px;
+    color: #6366f1;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 2px;
+  }
+  .show-more:hover { text-decoration: underline; }
+
+  /* ============ 结果区 ============ */
+  .results { background: #fff; min-width: 0; padding: 22px 32px 60px; }
+  .result-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; padding: 0 4px;
+  }
+  .result-count { font-size: 13px; color: #4a4f59; }
+  .result-count b { color: #6366f1; font-weight: 600; }
+
+  /* ============ 反应卡片（一张卡 = 一个 react_id） ============ */
+  .rxn-list { display: flex; flex-direction: column; gap: 14px; }
+  .rxn-card {
+    background: #fff;
+    border: 1px solid #ece8f5;
+    border-radius: 10px;
+    padding: 18px 22px;
+    transition: all 0.18s;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .rxn-card:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.10);
+  }
+
+  /* —— 卡片头：序号 + react_id + 反应分类 tag —— */
+  .rxn-head {
+    display: flex; align-items: center;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .rxn-index { color: #c4c8d2; font-size: 13px; font-weight: 500; min-width: 22px; }
+  .rxn-id {
+    color: #6366f1; font-weight: 500; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .rxn-id .label { color: #9ca3af; font-weight: 400; margin-right: 4px; }
+  .rxn-classify { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+  .rxn-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    background: #f3f0ff;
+    color: #7c3aed;
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 18px;
+  }
+  .rxn-tag.outline { background: #fff; color: #4a4f59; border: 1px solid #ece8f5; }
+  .rxn-head-spacer { flex: 1; }
+  .rxn-head-meta {
+    color: #6b7280; font-size: 12px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+
+  /* —— 反应式：反应物 + … + 反应物 → 产物（不显示物质 ID） —— */
+  .rxn-equation {
+    display: flex; align-items: stretch; gap: 12px;
+    flex-wrap: wrap;
+    background: #fafaff;
+    border: 1px dashed #e3dff0;
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .mol-card {
+    flex: 1 1 180px;
+    min-width: 160px;
+    max-width: 280px;
+    border: 1px solid #e3dff0;
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column;
+    justify-content: center; gap: 4px;
+  }
+  .mol-card .role {
+    font-size: 11px;
+    color: #9ca3af;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .mol-card .name {
+    font-size: 14px;
+    color: #1f2329;
+    line-height: 1.4;
+    word-break: break-word;
+    font-weight: 500;
+  }
+  .mol-card.product { border-color: #c7d2fe; background: #f5f3ff; }
+  .mol-card.product .role { color: #6366f1; }
+
+  .op {
+    display: flex; align-items: center;
+    color: #6b7280; font-size: 22px;
+    flex-shrink: 0; user-select: none;
+  }
+
+  .arrow {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    flex-shrink: 0; min-width: 70px;
+    padding: 0 4px;
+  }
+  .arrow .arrow-line {
+    width: 100%;
+    height: 1.5px;
+    background: #4a4f59;
+    position: relative;
+    margin: 6px 0;
+  }
+  .arrow .arrow-line::after {
+    content: "";
+    position: absolute;
+    right: -1px; top: 50%;
+    width: 0; height: 0;
+    border-left: 8px solid #4a4f59;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    transform: translateY(-50%);
+  }
+  .arrow .flask-icon {
+    color: #6366f1;
+    font-size: 14px;
+  }
+
+  /* —— 条件聚合按钮 + 展开列表 —— */
+  .conditions-toggle {
+    display: flex; align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #f5f3fa;
+    border: 1px solid #ece8f5;
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+  }
+  .conditions-toggle:hover {
+    background: #ede9ff;
+    border-color: #c7d2fe;
+  }
+  .conditions-toggle .ct-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 22px; height: 22px;
+    padding: 0 8px;
+    background: #ede9ff;
+    color: #6366f1;
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .conditions-toggle:hover .ct-count {
+    background: #fff;
+  }
+  .conditions-toggle .ct-text {
+    flex: 1;
+    font-size: 13px;
+    color: #1f2329;
+    font-weight: 500;
+  }
+  .conditions-toggle .ct-hint {
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .conditions-toggle .ct-caret {
+    color: #6366f1;
+    transition: transform 0.2s;
+    display: inline-flex;
+  }
+  .rxn-card.expanded .conditions-toggle .ct-caret {
+    transform: rotate(180deg);
+  }
+
+  /* 条件表 */
+  .conditions-table {
+    display: none;
+    border: 1px solid #ece8f5;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .rxn-card.expanded .conditions-table { display: block; }
+
+  .ct-head, .ct-row {
+    display: grid;
+    grid-template-columns: 60px 1.6fr 90px 1.4fr;
+    align-items: stretch;
+  }
+  .ct-head {
+    background: #fafaff;
+    border-bottom: 1px solid #ece8f5;
+  }
+  .ct-head > div {
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .ct-row {
+    border-bottom: 1px solid #f0eef5;
+  }
+  .ct-row:last-child { border-bottom: none; }
+  .ct-row > div {
+    padding: 14px 14px;
+    font-size: 13px;
+    color: #4a4f59;
+    line-height: 1.55;
+  }
+
+  .ct-no {
+    color: #c4c8d2;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+
+  .stage-line {
+    margin-bottom: 6px;
+  }
+  .stage-line:last-child { margin-bottom: 0; }
+  .stage-line b { color: #1f2329; font-weight: 600; margin-right: 4px; }
+  .stage-line .cond-em { color: #1f2329; font-weight: 500; }
+  .stage-line .solvent { color: #6366f1; }
+
+  .ct-yield {
+    color: #16a34a;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+  }
+  .ct-yield.empty { color: #c4c8d2; font-weight: 400; font-size: 13px; }
+
+  .ct-ref .author { color: #1f2329; font-weight: 500; font-size: 13px; }
+  .ct-ref .meta { color: #6b7280; font-size: 12px; line-height: 1.5; display: block; margin-top: 2px; }
+  .ct-ref .meta .journal { color: #6366f1; font-style: italic; }
+  .ct-ref .actions {
+    display: inline-flex; gap: 12px; flex-wrap: wrap;
+    margin-top: 4px;
+    font-size: 12px;
+  }
+  .ct-ref .actions a {
+    color: #6366f1;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .ct-ref .actions a:hover { text-decoration: underline; }
+  .ct-ref .src-tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .ct-ref .src-tag.paper { background: #ecfeff; color: #0891b2; }
+  .ct-ref .src-tag.patent { background: #fef3c7; color: #b45309; }
+
+  /* 分页（与物质页一致） */
+  .pagination {
+    margin-top: 28px;
+    display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+  }
+  .page-btn {
+    min-width: 32px; height: 32px;
+    padding: 0 8px;
+    border: 1px solid #ece8f5; background: #fff;
+    border-radius: 6px; cursor: pointer;
+    color: #4a4f59; font-size: 13px;
+  }
+  .page-btn:hover:not(.active):not(:disabled) {
+    border-color: #c7d2fe; color: #6366f1;
+  }
+  .page-btn.active { background: #6366f1; border-color: #6366f1; color: #fff; }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ============ 编辑检索面板 ============ */
+  .edit-overlay {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 220px;
+    z-index: 100; display: none;
+    flex-direction: column;
+  }
+  .edit-overlay.show { display: flex; }
+  .edit-panel {
+    background: #fff;
+    padding: 18px 32px;
+    border-bottom: 1px solid #ece8f5;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .edit-back {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    color: #4a4f59; font-size: 14px;
+    padding: 6px 8px; border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .edit-back:hover { background: #f5f3fa; color: #6366f1; }
+  .edit-input-wrap {
+    flex: 1; display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid #d8d4e6;
+    border-radius: 10px; padding: 9px 14px;
+    transition: all 0.2s;
+  }
+  .edit-input-wrap:focus-within {
+    border-color: #c7d2fe;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.12);
+  }
+  .edit-input-wrap input {
+    flex: 1; border: none; background: transparent;
+    outline: none; font-size: 14px; color: #1f2329;
+  }
+
+  /* 字段切换按钮组（反应物 / 产物） */
+  .edit-toggle {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .edit-toggle .toggle-btn {
+    padding: 5px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #6b7280;
+    background: transparent;
+    transition: all 0.15s;
+  }
+  .edit-toggle .toggle-btn:hover { color: #1f2329; }
+  .edit-toggle .toggle-btn.active {
+    background: #6366f1;
+    color: #fff;
+  }
+  .edit-toggle .toggle-btn.active:hover { background: #4f46e5; }
+  .toggle-divider {
+    width: 1px; height: 18px;
+    background: #e5e7eb;
+    flex-shrink: 0;
+  }
+
+  .edit-input-clear {
+    background: #d1d5db; border: none; cursor: pointer;
+    color: #fff; width: 18px; height: 18px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .edit-input-clear:hover { background: #9ca3af; }
+  .edit-submit {
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; font-size: 14px;
+    padding: 9px 22px; border-radius: 8px;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .edit-submit:hover { box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
+  .edit-backdrop { flex: 1; background: rgba(15, 18, 30, 0.45); cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ 左侧 Bohrium 导航（与物质页完全一致） ============ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">
+        <span class="num">107</span>
+        <span class="sym">Bh</span>
+      </div>
+      <div class="logo-text">
+        <div class="cn">玻尔</div>
+        <div class="en">Bohrium</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        新对话
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        站内搜索
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          科学导航
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sub-list">
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>订阅</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>期刊库</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>学者</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>科学百科</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>知识库</div>
+        </div>
+      </div>
+
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        实践
+        <span class="arrow">▸</span>
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.5L4 17h16l-6-7.5V2"/><path d="M8 2h8"/></svg>
+        跃迁实验室
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        智算
+        <span class="arrow">▸</span>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          历史对话
+          <span class="arrow">▾</span>
+        </div>
+        <div class="history-list">
+          <div class="history-item">告诉我最近在生…</div>
+          <div class="history-item">告诉我最近在生…</div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="invite-btn">
+        <span>🎁 邀搭子得体验会员</span>
+        <span>→</span>
+      </div>
+      <div class="plan">
+        Basic
+        <span class="upgrade">去升级</span>
+      </div>
+      <div class="quota">
+        <span>✦ 200</span>
+        <span>💬 60次</span>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="avatar"></div>
+      <span>🌐 CN ▾</span>
+      <span>🔔</span>
+      <span>?</span>
+    </div>
+
+    <div class="collapse-handle">‹</div>
+  </aside>
+
+  <!-- ============ 主内容区 ============ -->
+  <div class="main-area">
+
+    <!-- 顶部检索信息条 -->
+    <header class="topbar">
+      <button class="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        返回
+      </button>
+      <div class="search-info">检索 "<span class="keyword">3-Bromopyridine</span>"</div>
+      <button class="edit-btn" id="editBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        编辑
+      </button>
+    </header>
+
+    <!-- 反应 Tab 行 -->
+    <div class="obj-tabs">
+      <div class="obj-tab active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><polyline points="13 6 19 12 13 18"/></svg>
+        反应 <span class="count">1,284</span>
+      </div>
+    </div>
+
+    <!-- 内容：左筛选 + 右结果 -->
+    <div class="content">
+
+      <!-- 筛选面板 -->
+      <aside class="filter-panel">
+        <div class="filter-head">
+          <span class="title">筛选</span>
+          <button class="reset-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            重置
+          </button>
+        </div>
+
+        <div class="applied">
+          <div class="applied-label">已应用筛选</div>
+          <div class="applied-tags">
+            <span class="applied-tag">反应物: 3-Bromopyridine <span class="x">×</span></span>
+          </div>
+        </div>
+
+        <!-- 产率 -->
+        <div class="filter-group">
+          <div class="group-head">产率 (%) <span class="caret">▾</span></div>
+          <div class="group-body">
+            <label class="radio-row"><input type="radio" name="yield" /><span class="label-text">≥ 90</span><span class="count">412</span></label>
+            <label class="radio-row"><input type="radio" name="yield" /><span class="label-text">70 – 90</span><span class="count">528</span></label>
+            <label class="radio-row"><input type="radio" name="yield" /><span class="label-text">50 – 70</span><span class="count">231</span></label>
+            <label class="radio-row"><input type="radio" name="yield" /><span class="label-text">&lt; 50</span><span class="count">113</span></label>
+            <div class="range-row">
+              <input type="number" placeholder="最小" />
+              <span class="dash">—</span>
+              <input type="number" placeholder="最大" />
+            </div>
+            <button class="range-apply">应用范围</button>
+          </div>
+        </div>
+
+        <!-- 试剂 Reagent -->
+        <div class="filter-group">
+          <div class="group-head">试剂 <span class="caret">▾</span></div>
+          <div class="group-body">
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">phenylboronic acid</span><span class="count">312</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">K<sub>2</sub>CO<sub>3</sub></span><span class="count">285</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">Cs<sub>2</sub>CO<sub>3</sub></span><span class="count">194</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">Na<sub>2</sub>CO<sub>3</sub></span><span class="count">121</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">NaH</span><span class="count">87</span></label>
+            <div class="show-more">展开更多 ▾</div>
+          </div>
+        </div>
+
+        <!-- 催化剂 Catalyst -->
+        <div class="filter-group">
+          <div class="group-head">催化剂 <span class="caret">▾</span></div>
+          <div class="group-body">
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">Pd(PPh<sub>3</sub>)<sub>4</sub></span><span class="count">487</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">Pd(OAc)<sub>2</sub></span><span class="count">316</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">Pd/C</span><span class="count">142</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">PdCl<sub>2</sub>(dppf)</span><span class="count">98</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">CuI</span><span class="count">52</span></label>
+            <div class="show-more">展开更多 ▾</div>
+          </div>
+        </div>
+
+        <!-- 溶剂 Solvent -->
+        <div class="filter-group">
+          <div class="group-head">溶剂 <span class="caret">▾</span></div>
+          <div class="group-body">
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">water</span><span class="count">562</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">N,N-dimethyl-formamide</span><span class="count">418</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">methanol</span><span class="count">317</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">toluene</span><span class="count">263</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">tetrahydrofuran</span><span class="count">211</span></label>
+            <div class="show-more">展开更多 ▾</div>
+          </div>
+        </div>
+
+        <!-- 反应步骤数 -->
+        <div class="filter-group">
+          <div class="group-head">反应步骤数 <span class="caret">▾</span></div>
+          <div class="group-body">
+            <label class="radio-row"><input type="radio" name="stage" /><span class="label-text">1 步</span><span class="count">765</span></label>
+            <label class="radio-row"><input type="radio" name="stage" /><span class="label-text">2 步</span><span class="count">352</span></label>
+            <label class="radio-row"><input type="radio" name="stage" /><span class="label-text">3 步</span><span class="count">112</span></label>
+            <label class="radio-row"><input type="radio" name="stage" /><span class="label-text">≥ 4 步</span><span class="count">55</span></label>
+            <div class="range-row">
+              <input type="number" placeholder="最小" />
+              <span class="dash">—</span>
+              <input type="number" placeholder="最大" />
+            </div>
+            <button class="range-apply">应用范围</button>
+          </div>
+        </div>
+
+        <!-- 数据来源 -->
+        <div class="filter-group">
+          <div class="group-head">数据来源 <span class="caret">▾</span></div>
+          <div class="group-body">
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">论文</span><span class="count">962</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">专利</span><span class="count">322</span></label>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右侧结果 -->
+      <main class="results">
+        <div class="result-head">
+          <div class="result-count">搜索到 <b>1,284</b> 个反应</div>
+        </div>
+
+        <!-- 反应卡片列表（一卡 = 一个 react_id） -->
+        <div class="rxn-list">
+
+          <!-- ========== 反应卡片 1：4 个条件记录 ========== -->
+          <div class="rxn-card expanded">
+            <div class="rxn-head">
+              <span class="rxn-index">1</span>
+              <span class="rxn-id"><span class="label">Reaction ID</span>fyonhsuwn</span>
+              <span class="rxn-classify">
+                <span class="rxn-tag">Preparation</span>
+              </span>
+              <span class="rxn-head-spacer"></span>
+              <span class="rxn-head-meta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                4 篇关联来源
+              </span>
+            </div>
+
+            <!-- 反应式（不显示物质 ID） -->
+            <div class="rxn-equation">
+              <div class="mol-card">
+                <div class="role">Reactant</div>
+                <div class="name">3-Bromopyridine</div>
+              </div>
+              <div class="op">+</div>
+              <div class="mol-card">
+                <div class="role">Reactant</div>
+                <div class="name">phenylboronic acid</div>
+              </div>
+              <div class="arrow">
+                <span class="flask-icon">⚗</span>
+                <div class="arrow-line"></div>
+              </div>
+              <div class="mol-card product">
+                <div class="role">Product</div>
+                <div class="name">3-phenylpyridine</div>
+              </div>
+            </div>
+
+            <!-- 条件聚合按钮 -->
+            <div class="conditions-toggle">
+              <span class="ct-count">4</span>
+              <span class="ct-text">反应条件</span>
+              <span class="ct-hint">查看不同来源的实验条件、产率与来源</span>
+              <span class="ct-caret">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </div>
+
+            <!-- 展开式条件表 -->
+            <div class="conditions-table">
+              <div class="ct-head">
+                <div>#</div>
+                <div>反应条件</div>
+                <div>产率</div>
+                <div>关联来源</div>
+              </div>
+
+              <div class="ct-row">
+                <div class="ct-no">1</div>
+                <div>
+                  <div class="stage-line">
+                    <b>Stage #1:</b>
+                    With <span class="cond-em">Sulfated tungstate</span> at <span class="cond-em">70 °C</span> for <span class="cond-em">0.333 h</span>;
+                    <span class="solvent">Solvent: water</span>;
+                  </div>
+                </div>
+                <div><span class="ct-yield">90%</span></div>
+                <div class="ct-ref">
+                  <span class="src-tag paper">论文</span>
+                  <span class="author">Pathare, Sagar P.; Akamanchi, Krishnacharya G.</span>
+                  <span class="meta"><span class="journal">Tetrahedron Letters</span>, 2013, vol. 54, # 48, p. 6455 - 6459</span>
+                  <span class="actions">
+                    <a>全文 ↗</a>
+                  </span>
+                </div>
+              </div>
+
+              <div class="ct-row">
+                <div class="ct-no">2</div>
+                <div>
+                  <div class="stage-line">
+                    <b>Stage #1:</b>
+                    With <span class="cond-em">Pd(OAc)<sub>2</sub></span> at <span class="cond-em">100 °C</span> for <span class="cond-em">9 h</span>;
+                    <span class="solvent">Solvent: water</span>
+                  </div>
+                  <div class="stage-line">
+                    <b>Stage #2:</b>
+                    With <span class="cond-em">K<sub>2</sub>CO<sub>3</sub></span> at <span class="cond-em">100 °C</span> for <span class="cond-em">12 h</span>;
+                    <em>Sealed tube; regioselective reaction</em>
+                  </div>
+                </div>
+                <div><span class="ct-yield">82.5%</span></div>
+                <div class="ct-ref">
+                  <span class="src-tag paper">论文</span>
+                  <span class="author">Lizza, Joseph R.; Moura-Letts, Gustavo</span>
+                  <span class="meta"><span class="journal">Synthesis</span>, 2017, vol. 49, # 6, art. no. SS-2016-M0690-OP, p. 1231 - 1242</span>
+                  <span class="actions">
+                    <a> 全文↗</a>
+                  </span>
+                </div>
+              </div>
+
+              <div class="ct-row">
+                <div class="ct-no">3</div>
+                <div>
+                  <div class="stage-line">
+                    <b>Stage #1:</b>
+                    In <span class="solvent">methanol</span> for <span class="cond-em">2 h</span>; <em>Heating</em>; Yield given
+                  </div>
+                </div>
+                <div><span class="ct-yield empty">—</span></div>
+                <div class="ct-ref">
+                  <span class="src-tag paper">论文</span>
+                  <span class="author">Damle, Subhash V.; Patil, Prashant N.; Salunkhe, Manikrao M.</span>
+                  <span class="meta"><span class="journal">Synthetic Communications</span>, 1999, vol. 29, # 10, p. 1639 - 1644</span>
+                  <span class="actions">
+                    <a>全文 ↗</a>
+                  </span>
+                </div>
+              </div>
+
+              <div class="ct-row">
+                <div class="ct-no">4</div>
+                <div>
+                  <div class="stage-line">
+                    <b>Stage #1:</b>
+                    With <span class="cond-em">Pd(PPh<sub>3</sub>)<sub>4</sub></span> / <span class="cond-em">Cs<sub>2</sub>CO<sub>3</sub></span>
+                    at <span class="cond-em">85 °C</span> for <span class="cond-em">6 h</span>;
+                    <span class="solvent">Solvent: toluene + ethanol</span>
+                  </div>
+                </div>
+                <div><span class="ct-yield">94%</span></div>
+                <div class="ct-ref">
+                  <span class="src-tag patent">专利</span>
+                  <span class="author">CN112341389A · BASF SE</span>
+                  <span class="meta">公开日 2021-02-09 · 发明人 Müller K. 等</span>
+                  <span class="actions">
+                    <a>全文 ↗</a>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== 反应卡片 2：2 个条件记录 ========== -->
+          <div class="rxn-card">
+            <div class="rxn-head">
+              <span class="rxn-index">2</span>
+              <span class="rxn-id"><span class="label">Reaction ID</span>fxepoxopn</span>
+              <span class="rxn-classify">
+                <span class="rxn-tag">Preparation</span>
+                <span class="rxn-tag">Ring Opening</span>
+              </span>
+              <span class="rxn-head-spacer"></span>
+              <span class="rxn-head-meta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                2 篇关联文献
+              </span>
+            </div>
+
+            <div class="rxn-equation">
+              <div class="mol-card">
+                <div class="role">Reactant</div>
+                <div class="name">(S)-1-[p-(carbamoylmethyl)phenoxy]-2,3-epoxypropane</div>
+              </div>
+              <div class="op">+</div>
+              <div class="mol-card">
+                <div class="role">Reactant</div>
+                <div class="name">isopropylamine</div>
+              </div>
+              <div class="arrow">
+                <span class="flask-icon">⚗</span>
+                <div class="arrow-line"></div>
+              </div>
+              <div class="mol-card product">
+                <div class="role">Product</div>
+                <div class="name">Atenolol</div>
+              </div>
+            </div>
+
+            <div class="conditions-toggle">
+              <span class="ct-count">2</span>
+              <span class="ct-text">反应条件</span>
+              <span class="ct-hint">查看不同来源的实验条件、产率与来源</span>
+              <span class="ct-caret">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </div>
+
+            <div class="conditions-table">
+              <div class="ct-head">
+                <div>#</div>
+                <div>反应条件</div>
+                <div>产率</div>
+                <div>关联来源</div>
+              </div>
+              <div class="ct-row">
+                <div class="ct-no">1</div>
+                <div>
+                  <div class="stage-line">
+                    <b>Stage #1:</b>
+                    In <span class="solvent">N,N-dimethyl-formamide</span> at <span class="cond-em">60 °C</span> for <span class="cond-em">12 h</span>; <em>Sealed tube</em>
+                  </div>
+                  <div class="stage-line">
+                    <b>Stage #2:</b>
+                    With <span class="cond-em">water</span> in <span class="solvent">N,N-dimethyl-formamide</span> at <span class="cond-em">60 °C</span> for <span class="cond-em">12 h</span>; <em>Solvent; Temperature; Sealed tube; regioselective reaction</em>
+                  </div>
+                </div>
+                <div><span class="ct-yield">82.5%</span></div>
+                <div class="ct-ref">
+                  <span class="src-tag paper">论文</span>
+                  <span class="author">Lizza, Joseph R.; Moura-Letts, Gustavo</span>
+                  <span class="meta"><span class="journal">Synthesis</span>, 2017, vol. 49, # 6, p. 1231 - 1242</span>
+                  <span class="actions">
+                    <a>全文 ↗</a>
+                  </span>
+                </div>
+              </div>
+              <div class="ct-row">
+                <div class="ct-no">2</div>
+                <div>
+                  <div class="stage-line">
+                    <b>Stage #1:</b>
+                    In <span class="solvent">isopropanol</span> at <span class="cond-em">82 °C</span> for <span class="cond-em">8 h</span>; <em>Reflux</em>
+                  </div>
+                </div>
+                <div><span class="ct-yield">78%</span></div>
+                <div class="ct-ref">
+                  <span class="src-tag patent">专利</span>
+                  <span class="author">US4874911A · ICI Pharma</span>
+                  <span class="meta">公开日 1989-10-17</span>
+                  <span class="actions">
+                    <a>全文 ↗</a>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== 反应卡片 3：1 个条件记录 ========== -->
+          <div class="rxn-card">
+            <div class="rxn-head">
+              <span class="rxn-index">3</span>
+              <span class="rxn-id"><span class="label">Reaction ID</span>fzbnredz</span>
+              <span class="rxn-classify">
+                <span class="rxn-tag">Reduction</span>
+                <span class="rxn-tag outline">Hydrogenation</span>
+              </span>
+              <span class="rxn-head-spacer"></span>
+              <span class="rxn-head-meta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                1 篇关联文献
+              </span>
+            </div>
+
+            <div class="rxn-equation">
+              <div class="mol-card">
+                <div class="role">Reactant</div>
+                <div class="name">benzonitrile</div>
+              </div>
+              <div class="op">+</div>
+              <div class="mol-card">
+                <div class="role">Reactant</div>
+                <div class="name">H<sub>2</sub></div>
+              </div>
+              <div class="arrow">
+                <span class="flask-icon">⚗</span>
+                <div class="arrow-line"></div>
+              </div>
+              <div class="mol-card product">
+                <div class="role">Product</div>
+                <div class="name">benzylamine</div>
+              </div>
+            </div>
+
+            <div class="conditions-toggle">
+              <span class="ct-count">1</span>
+              <span class="ct-text">反应条件</span>
+              <span class="ct-hint">查看不同来源的实验条件、产率与来源</span>
+              <span class="ct-caret">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </div>
+
+            <div class="conditions-table">
+              <div class="ct-head">
+                <div>#</div>
+                <div>反应条件</div>
+                <div>产率</div>
+                <div>关联来源</div>
+              </div>
+              <div class="ct-row">
+                <div class="ct-no">1</div>
+                <div>
+                  <div class="stage-line">
+                    <b>Stage #1:</b>
+                    With <span class="cond-em">10% Pd/C</span> at <span class="cond-em">25 °C</span> for <span class="cond-em">3 h</span>;
+                    <span class="solvent">Solvent: methanol</span>; <em>Hydrogen atmosphere</em>
+                  </div>
+                </div>
+                <div><span class="ct-yield">76%</span></div>
+                <div class="ct-ref">
+                  <span class="src-tag paper">论文</span>
+                  <span class="author">Chen, X.; Yamamoto, T.</span>
+                  <span class="meta"><span class="journal">J. Org. Chem.</span>, 2020, vol. 85, # 4, p. 2210 - 2218</span>
+                  <span class="actions">
+                    <a>全文 ↗</a>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 编辑检索面板 ============ -->
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-panel">
+    <button class="edit-back" id="editClose">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      返回
+    </button>
+    <div class="edit-input-wrap">
+      <div class="edit-toggle">
+        <button class="toggle-btn active" data-field="reactant">反应物</button>
+        <button class="toggle-btn" data-field="product">产物</button>
+      </div>
+      <div class="toggle-divider"></div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="editInput" type="text" value="3-Bromopyridine" />
+      <button class="edit-input-clear" id="editClear" title="清空">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <button class="edit-submit">搜索</button>
+  </div>
+  <div class="edit-backdrop" id="editBackdrop"></div>
+</div>
+
+<script>
+  // 折叠筛选组
+  document.querySelectorAll('.group-head').forEach(h => {
+    h.onclick = () => h.parentElement.classList.toggle('collapsed');
+  });
+
+  // 已应用筛选标签删除
+  document.querySelectorAll('.applied-tag .x').forEach(x => {
+    x.onclick = (e) => {
+      e.stopPropagation();
+      x.parentElement.remove();
+    };
+  });
+
+  // 反应条件展开/收起
+  document.querySelectorAll('.conditions-toggle').forEach(t => {
+    t.onclick = (e) => {
+      e.stopPropagation();
+      t.closest('.rxn-card').classList.toggle('expanded');
+    };
+  });
+
+  // 编辑检索弹层
+  const editBtn = document.getElementById('editBtn');
+  const editOverlay = document.getElementById('editOverlay');
+  const editClose = document.getElementById('editClose');
+  const editBackdrop = document.getElementById('editBackdrop');
+  const editInput = document.getElementById('editInput');
+
+  function openEdit() {
+    editOverlay.classList.add('show');
+    setTimeout(() => { editInput.focus(); editInput.select(); }, 0);
+  }
+  function closeEdit() { editOverlay.classList.remove('show'); }
+
+  editBtn.addEventListener('click', openEdit);
+  editClose.addEventListener('click', closeEdit);
+  editBackdrop.addEventListener('click', closeEdit);
+  document.getElementById('editClear').addEventListener('click', () => {
+    editInput.value = '';
+    editInput.focus();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && editOverlay.classList.contains('show')) closeEdit();
+  });
+
+  // 字段切换按钮（反应物/产物）
+  const editToggleBtns = document.querySelectorAll('.edit-toggle .toggle-btn');
+  editToggleBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      editToggleBtns.forEach(b => b.classList.toggle('active', b === btn));
+    });
+  });
+</script>
+
+</body>
+</html>

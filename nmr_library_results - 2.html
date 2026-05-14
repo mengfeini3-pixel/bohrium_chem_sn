@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NMR 库 - 检索结果</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #1f2329;
+    font-size: 14px;
+  }
+
+  /* ============ 整体布局 ============ */
+  .app { display: flex; min-height: 100vh; }
+
+  /* ============ 左侧 Bohrium 导航栏 ============ */
+  .sidebar {
+    width: 220px;
+    background: #f0edf5;
+    border-right: 1px solid #e3dff0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .logo { display: flex; align-items: center; gap: 8px; padding: 16px 18px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    border: 2px solid #2c2c2c;
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-weight: 600; line-height: 1;
+    position: relative;
+  }
+  .logo-icon .num { font-size: 8px; position: absolute; top: 2px; right: 3px; }
+  .logo-icon .sym { font-size: 14px; }
+  .logo-text { line-height: 1.2; }
+  .logo-text .cn { font-size: 16px; font-weight: 600; }
+  .logo-text .en { font-size: 11px; color: #6b7280; }
+
+  .nav { padding: 8px 10px; flex: 1; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 6px;
+    cursor: pointer; color: #1f2329; font-size: 14px;
+  }
+  .nav-item:hover { background: #e6e1ee; }
+  .nav-item .icon { width: 16px; height: 16px; opacity: 0.85; flex-shrink: 0; }
+  .sidebar svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-item .arrow { margin-left: auto; font-size: 10px; color: #8a8f99; }
+  .nav-section { margin-top: 4px; }
+  .sub-list { padding-left: 20px; margin-top: 2px; }
+  .sub-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; color: #4a4f59; font-size: 13px;
+  }
+  .sub-item:hover { background: #e6e1ee; }
+  .history-list { padding-left: 20px; }
+  .history-item {
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; color: #4a4f59; font-size: 13px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-item:hover { background: #e6e1ee; }
+
+  .sidebar-footer { border-top: 1px solid #e3dff0; padding: 12px; }
+  .invite-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 6px;
+    background: #e6e1ee; font-size: 13px;
+    cursor: pointer; margin-bottom: 10px;
+  }
+  .plan { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 6px; }
+  .plan .upgrade {
+    margin-left: auto; font-size: 12px; color: #6b7280;
+    background: #fff; padding: 2px 8px; border-radius: 10px;
+    border: 1px solid #e5e7eb; cursor: pointer;
+  }
+  .quota { display: flex; align-items: center; gap: 14px; font-size: 12px; color: #4a4f59; }
+  .quota span { display: inline-flex; align-items: center; gap: 4px; }
+
+  .bottom-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid #e3dff0;
+    font-size: 13px; color: #4a4f59;
+  }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #c4b5fd, #818cf8); }
+
+  .collapse-handle {
+    position: absolute; right: -12px; top: 50%;
+    transform: translateY(-50%);
+    width: 22px; height: 36px;
+    background: #fff; border: 1px solid #e3dff0; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #8a8f99; z-index: 5;
+  }
+
+  /* ============ 主内容区 ============ */
+  .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .topbar {
+    background: #fff; padding: 16px 32px;
+    border-bottom: 1px solid #ece8f5;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    color: #4a4f59; font-size: 14px;
+    padding: 6px 8px; border-radius: 6px;
+  }
+  .back-btn:hover { background: #f5f3fa; color: #6366f1; }
+  .search-info { font-size: 14px; color: #1f2329; }
+  .search-info .keyword {
+    color: #6366f1; font-weight: 500;
+    font-family: "SF Mono", "Consolas", monospace;
+    font-size: 13px;
+  }
+  .edit-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    color: #6366f1; font-size: 13px;
+    padding: 4px 8px; border-radius: 6px;
+  }
+  .edit-btn:hover { background: #ede9ff; }
+
+  .obj-tabs {
+    background: #fff;
+    padding: 14px 32px 0;
+    border-bottom: 1px solid #ece8f5;
+    display: flex; gap: 8px;
+  }
+  .obj-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px; cursor: pointer;
+    color: #6b7280; font-size: 14px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .obj-tab.active { color: #6366f1; font-weight: 500; border-bottom-color: #6366f1; }
+  .obj-tab .count { color: inherit; font-variant-numeric: tabular-nums; }
+
+  /* ============ 内容两栏 ============ */
+  .content {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0; padding: 0;
+    flex: 1; background: #fff;
+  }
+
+  /* ============ 筛选面板 ============ */
+  .filter-panel {
+    background: #fff;
+    padding: 22px 22px 22px 32px;
+    height: fit-content;
+    border-right: 1px solid #ece8f5;
+    position: sticky;
+    top: 105px;
+  }
+  .filter-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .filter-head .title { font-size: 15px; font-weight: 600; color: #1f2329; }
+  .reset-btn {
+    background: none; border: none; cursor: pointer;
+    color: #6b7280; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .reset-btn:hover { color: #6366f1; }
+
+  .applied { margin: 14px 0; padding-bottom: 14px; border-bottom: 1px solid #f0eef5; }
+  .applied-label { font-size: 12px; color: #9ca3af; margin-bottom: 8px; }
+  .applied-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .applied-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; background: #ede9ff;
+    color: #6366f1; border-radius: 4px; font-size: 12px;
+  }
+  .applied-tag .x { cursor: pointer; color: #818cf8; }
+  .applied-tag .x:hover { color: #4f46e5; }
+
+  .filter-group { border-bottom: 1px solid #f0eef5; padding: 14px 0; }
+  .filter-group:last-child { border-bottom: none; }
+  .group-head {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; font-size: 14px; font-weight: 500;
+    color: #1f2329; margin-bottom: 10px;
+  }
+  .group-head .caret { color: #9ca3af; transition: transform 0.2s; }
+  .filter-group.collapsed .group-head .caret { transform: rotate(-90deg); }
+  .filter-group.collapsed .group-body { display: none; }
+
+  .checkbox-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 2px; cursor: pointer;
+    font-size: 13px; color: #4a4f59;
+  }
+  .checkbox-row:hover { color: #1f2329; }
+  .checkbox-row input { accent-color: #6366f1; }
+  .checkbox-row .label-text { flex: 1; }
+  .checkbox-row .count {
+    color: #9ca3af; font-size: 12px; font-variant-numeric: tabular-nums;
+  }
+
+  .search-mini {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid #e5e7eb; border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .search-mini:focus-within { border-color: #c7d2fe; }
+  .search-mini input {
+    flex: 1; border: none; outline: none;
+    background: transparent;
+    font-size: 12px; color: #1f2329;
+  }
+  .show-more {
+    margin-top: 6px;
+    color: #6366f1;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 2px;
+  }
+  .show-more:hover { text-decoration: underline; }
+
+  /* ============ 结果区 ============ */
+  .results { background: #fff; min-width: 0; padding: 22px 32px 60px; }
+  .result-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; padding: 0 4px;
+  }
+  .result-count { font-size: 13px; color: #4a4f59; }
+  .result-count b { color: #6366f1; font-weight: 600; }
+
+  /* 相似度阈值输入（参考图：右上） */
+  .threshold-group {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #f5f3fa;
+    border: 1px solid #ece8f5;
+    border-radius: 8px;
+    padding: 5px 6px 5px 14px;
+  }
+  .threshold-group .thr-label { font-size: 13px; color: #4a4f59; }
+  .threshold-group .thr-input {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: #fff;
+    border: 1px solid #ece8f5;
+    border-radius: 6px;
+    padding: 4px 8px;
+  }
+  .threshold-group .thr-input input {
+    width: 44px; border: none; outline: none;
+    font-size: 13px; color: #1f2329;
+    font-variant-numeric: tabular-nums; text-align: right;
+    background: transparent;
+  }
+  .threshold-group .thr-input .unit { color: #9ca3af; font-size: 13px; }
+  .threshold-group .thr-confirm {
+    border: none; cursor: pointer;
+    background: #1f2329; color: #fff;
+    padding: 6px 16px; border-radius: 6px;
+    font-size: 13px;
+  }
+  .threshold-group .thr-confirm:hover { background: #111418; }
+
+  /* ============ 数据表 ============ */
+  .table-wrap {
+    border: 1px solid #ece8f5;
+    border-radius: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #fff;
+  }
+  /* 滚动条样式 */
+  .table-wrap::-webkit-scrollbar { height: 10px; }
+  .table-wrap::-webkit-scrollbar-track { background: #fafaff; border-radius: 0 0 10px 10px; }
+  .table-wrap::-webkit-scrollbar-thumb { background: #d8d4e6; border-radius: 5px; }
+  .table-wrap::-webkit-scrollbar-thumb:hover { background: #b8b2d0; }
+
+  .nmr-table {
+    min-width: 1400px;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    color: #1f2329;
+    table-layout: fixed;
+  }
+  .nmr-table thead th {
+    background: #fafaff;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-align: left;
+    padding: 14px 14px;
+    border-bottom: 1px solid #ece8f5;
+    white-space: nowrap;
+    position: relative;
+  }
+  .nmr-table thead th .th-hint {
+    display: inline-flex; align-items: center;
+    margin-left: 4px;
+    color: #c4c8d2;
+    cursor: help;
+    vertical-align: middle;
+  }
+  .nmr-table thead th .th-hint:hover { color: #6366f1; }
+
+  /* 列宽 */
+  .col-mol      { width: 150px; }
+  .col-src      { width: 180px; }
+  .col-type     { width: 90px;  }
+  .col-freq     { width: 90px;  }
+  .col-solvent  { width: 90px;  }
+  .col-shift    { width: 260px; }
+  .col-atom     { width: 78px;  }
+  .col-atomenv  { width: 88px;  }
+  .col-atomabs  { width: 88px;  }
+  .col-note     { width: 140px; }
+  .col-op       { width: 60px;  }
+
+  .nmr-table tbody td {
+    padding: 18px 14px;
+    border-bottom: 1px solid #f0eef5;
+    vertical-align: middle;
+    color: #4a4f59;
+    line-height: 1.55;
+    word-break: break-word;
+  }
+  .nmr-table tbody tr:last-child td { border-bottom: none; }
+  .nmr-table tbody tr:hover { background: #fbfaff; }
+
+  /* 分子结构容器 */
+  .mol-thumb {
+    width: 120px; height: 96px;
+    border: 1px solid #f0eef5;
+    border-radius: 6px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .mol-thumb svg { width: 100%; height: 100%; }
+
+  /* 来源 DOI */
+  .src-doi {
+    color: #1f2329;
+    font-family: "SF Mono", "Consolas", monospace;
+    font-size: 12px;
+    word-break: break-all;
+  }
+  .src-doi .src-link {
+    display: inline-flex; align-items: center; gap: 3px;
+    color: #6366f1; margin-top: 6px;
+    font-size: 12px; font-family: inherit;
+    cursor: pointer; text-decoration: none;
+  }
+  .src-doi .src-link:hover { text-decoration: underline; }
+
+  /* NMR 类别（纯文本，不带背景） */
+  .nmr-type-tag {
+    display: inline-block;
+    color: #1f2329;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .cell-freq, .cell-solvent { color: #4a4f59; white-space: nowrap; }
+
+  /* 化学位移：保留多行 */
+  .cell-shift {
+    color: #1f2329;
+    font-size: 12.5px;
+    line-height: 1.65;
+  }
+
+  /* 数字列 */
+  .cell-num {
+    font-variant-numeric: tabular-nums;
+    color: #1f2329;
+    text-align: right;
+    padding-right: 16px !important;
+  }
+  .nmr-table thead th.col-atom,
+  .nmr-table thead th.col-atomenv,
+  .nmr-table thead th.col-atomabs {
+    text-align: right;
+    padding-right: 16px;
+  }
+
+  /* 注释 */
+  .cell-note {
+    color: #6b7280;
+    font-size: 12.5px;
+  }
+  .cell-note.empty { color: #c4c8d2; }
+
+  /* 操作 */
+  .cell-op { text-align: center; }
+  .op-btn {
+    width: 30px; height: 30px;
+    border: none; background: transparent;
+    border-radius: 6px; cursor: pointer;
+    color: #6b7280;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .op-btn:hover { background: #ede9ff; color: #6366f1; }
+
+  /* 分页 */
+  .pagination {
+    margin-top: 24px;
+    display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+    flex-wrap: wrap;
+  }
+  .page-btn {
+    min-width: 32px; height: 32px;
+    padding: 0 10px;
+    border: 1px solid #ece8f5; background: #fff;
+    border-radius: 6px; cursor: pointer;
+    color: #4a4f59; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .page-btn:hover:not(.active):not(:disabled):not(.ellipsis) {
+    border-color: #c7d2fe; color: #6366f1;
+  }
+  .page-btn.active {
+    background: #1f2329; border-color: #1f2329; color: #fff;
+  }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .page-btn.ellipsis {
+    border: none; background: transparent;
+    color: #9ca3af; cursor: default;
+    min-width: 22px; padding: 0;
+  }
+  .page-size {
+    margin-left: 8px;
+    position: relative;
+  }
+  .page-size select {
+    appearance: none; -webkit-appearance: none;
+    border: 1px solid #ece8f5; background: #fff;
+    color: #4a4f59; font-size: 13px;
+    height: 32px; padding: 0 30px 0 12px;
+    border-radius: 6px; cursor: pointer; outline: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+  .page-size select:hover { border-color: #c7d2fe; }
+  .page-jump {
+    margin-left: 8px;
+    display: inline-flex; align-items: center; gap: 6px;
+    color: #4a4f59; font-size: 13px;
+  }
+  .page-jump input {
+    width: 48px; height: 32px;
+    padding: 0 8px;
+    border: 1px solid #ece8f5; border-radius: 6px;
+    outline: none; font-size: 13px;
+    font-variant-numeric: tabular-nums; text-align: center;
+    color: #1f2329;
+  }
+  .page-jump input:focus { border-color: #c7d2fe; }
+
+  /* ============ 编辑检索面板 ============ */
+  .edit-overlay {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 220px;
+    z-index: 100; display: none;
+    flex-direction: column;
+  }
+  .edit-overlay.show { display: flex; }
+  .edit-panel {
+    background: #fff;
+    padding: 18px 32px;
+    border-bottom: 1px solid #ece8f5;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .edit-back {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    color: #4a4f59; font-size: 14px;
+    padding: 6px 8px; border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .edit-back:hover { background: #f5f3fa; color: #6366f1; }
+  .edit-mode-select {
+    border: 1px solid #d8d4e6;
+    border-radius: 8px;
+    background: #fff;
+    color: #4a4f59;
+    font-size: 13px;
+    padding: 9px 28px 9px 14px;
+    cursor: pointer;
+    outline: none;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+  .edit-input-wrap {
+    flex: 1; display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid #d8d4e6;
+    border-radius: 10px; padding: 9px 14px;
+    transition: all 0.2s;
+  }
+  .edit-input-wrap:focus-within {
+    border-color: #c7d2fe;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.12);
+  }
+  .edit-input-wrap input {
+    flex: 1; border: none; background: transparent;
+    outline: none; font-size: 14px; color: #1f2329;
+    font-family: "SF Mono", "Consolas", monospace;
+  }
+  .edit-input-clear {
+    background: #d1d5db; border: none; cursor: pointer;
+    color: #fff; width: 18px; height: 18px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .edit-input-clear:hover { background: #9ca3af; }
+  .edit-submit {
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; font-size: 14px;
+    padding: 9px 22px; border-radius: 8px;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .edit-submit:hover { box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
+
+  /* 编辑面板内的相似度阈值（仅相似度检索时显示） */
+  .edit-threshold {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #f5f3fa;
+    border: 1px solid #d8d4e6;
+    border-radius: 10px;
+    padding: 4px 6px 4px 14px;
+    flex-shrink: 0;
+  }
+  .edit-threshold.hidden { display: none; }
+  .edit-threshold .thr-label { font-size: 13px; color: #4a4f59; white-space: nowrap; }
+  .edit-threshold .thr-input {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: #fff;
+    border: 1px solid #ece8f5;
+    border-radius: 6px;
+    padding: 5px 10px;
+  }
+  .edit-threshold .thr-input input {
+    width: 40px; border: none; outline: none;
+    font-size: 13px; color: #1f2329;
+    font-variant-numeric: tabular-nums; text-align: right;
+    background: transparent;
+  }
+  .edit-threshold .thr-input .unit { color: #9ca3af; font-size: 13px; }
+  .edit-backdrop { flex: 1; background: rgba(15, 18, 30, 0.45); cursor: pointer; }
+
+  /* ============ 结构预览弹窗 ============ */
+  .preview-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15, 18, 30, 0.45);
+    z-index: 200;
+    display: none;
+    align-items: center; justify-content: center;
+  }
+  .preview-overlay.show { display: flex; }
+  .preview-modal {
+    width: 540px; max-width: calc(100vw - 40px);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .preview-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0eef5;
+  }
+  .preview-title { font-size: 15px; font-weight: 600; color: #1f2329; }
+  .preview-close {
+    border: none; background: transparent; cursor: pointer;
+    color: #6b7280; padding: 4px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .preview-close:hover { background: #f5f3fa; color: #1f2329; }
+
+  .preview-canvas-wrap {
+    position: relative;
+    margin: 16px 20px;
+    background: #f4f6fa;
+    border-radius: 10px;
+    height: 360px;
+    overflow: hidden;
+  }
+  .preview-toolbar {
+    position: absolute; top: 12px; left: 16px; right: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 2;
+  }
+  .preview-legend {
+    display: inline-flex; align-items: center; gap: 14px;
+    font-size: 13px; color: #4a4f59;
+  }
+  .preview-legend .dot {
+    display: inline-block; width: 9px; height: 9px;
+    border-radius: 50%; margin-right: 5px; vertical-align: middle;
+  }
+  .preview-legend .dot.c { background: #2ecc71; }
+  .preview-legend .dot.h { background: #c4c8d2; }
+
+  .preview-mode-switch {
+    display: inline-flex;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 3px;
+  }
+  .preview-mode-switch button {
+    border: none; background: transparent; cursor: pointer;
+    padding: 5px 16px; border-radius: 999px;
+    font-size: 13px; color: #4a4f59;
+    font-variant-numeric: tabular-nums;
+  }
+  .preview-mode-switch button.active {
+    background: #1f2329; color: #fff;
+  }
+
+  .preview-stage {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .preview-stage svg { max-width: 90%; max-height: 90%; }
+
+  .preview-axis {
+    position: absolute; left: 14px; bottom: 14px;
+    width: 50px; height: 50px;
+    pointer-events: none;
+  }
+  .preview-tools {
+    position: absolute; right: 14px; bottom: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .preview-tools button {
+    width: 34px; height: 34px;
+    border: 1px solid #ece8f5;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #6b7280;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .preview-tools button:hover { color: #6366f1; border-color: #c7d2fe; }
+
+  .preview-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px 18px;
+    color: #6b7280; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .preview-nav { display: inline-flex; gap: 6px; }
+  .preview-nav button {
+    width: 28px; height: 28px;
+    border: 1px solid #ece8f5;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #6b7280;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .preview-nav button:hover:not(:disabled) { color: #6366f1; border-color: #c7d2fe; }
+  .preview-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ 左侧 Bohrium 导航 ============ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">
+        <span class="num">107</span>
+        <span class="sym">Bh</span>
+      </div>
+      <div class="logo-text">
+        <div class="cn">玻尔</div>
+        <div class="en">Bohrium</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        新对话
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        站内搜索
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          科学导航
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sub-list">
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>订阅</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>期刊库</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>学者</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>科学百科</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>知识库</div>
+        </div>
+      </div>
+
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        实践
+        <span class="arrow">▸</span>
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.5L4 17h16l-6-7.5V2"/><path d="M8 2h8"/></svg>
+        跃迁实验室
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        智算
+        <span class="arrow">▸</span>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          历史对话
+          <span class="arrow">▾</span>
+        </div>
+        <div class="history-list">
+          <div class="history-item">告诉我最近在生…</div>
+          <div class="history-item">告诉我最近在生…</div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="invite-btn">
+        <span>🎁 邀搭子得体验会员</span>
+        <span>→</span>
+      </div>
+      <div class="plan">
+        Basic
+        <span class="upgrade">去升级</span>
+      </div>
+      <div class="quota">
+        <span>✦ 200</span>
+        <span>💬 60次</span>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="avatar"></div>
+      <span>🌐 CN ▾</span>
+      <span>🔔</span>
+      <span>?</span>
+    </div>
+
+    <div class="collapse-handle">‹</div>
+  </aside>
+
+  <!-- ============ 主内容区 ============ -->
+  <div class="main-area">
+
+    <!-- 顶部检索信息条 -->
+    <header class="topbar">
+      <button class="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        返回
+      </button>
+      <div class="search-info">检索 "<span class="keyword">C(CC1)CC2C1CCCC2</span>"</div>
+      <button class="edit-btn" id="editBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        编辑
+      </button>
+    </header>
+
+    <!-- 对象 Tab 行 -->
+    <div class="obj-tabs">
+      <div class="obj-tab active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M2 19h20"/><path d="M9 9v6"/><path d="M15 9v6"/></svg>
+        NMR 数据 <span class="count">3</span>
+      </div>
+    </div>
+
+    <!-- 内容：左筛选 + 右结果 -->
+    <div class="content">
+
+      <!-- 筛选面板 -->
+      <aside class="filter-panel">
+        <div class="filter-head">
+          <span class="title">筛选</span>
+          <button class="reset-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            重置
+          </button>
+        </div>
+
+        <div class="applied">
+          <div class="applied-label">已应用筛选</div>
+          <div class="applied-tags">
+            <span class="applied-tag">SMILES: C(CC1)CC2C1CCCC2 <span class="x">×</span></span>
+          </div>
+        </div>
+
+        <!-- 核磁类型 -->
+        <div class="filter-group">
+          <div class="group-head">核磁类型 <span class="caret">▾</span></div>
+          <div class="group-body">
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text"><sup>1</sup>H NMR</span><span class="count">2</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text"><sup>13</sup>C NMR</span><span class="count">1</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text"><sup>19</sup>F NMR</span><span class="count">0</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text"><sup>31</sup>P NMR</span><span class="count">0</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text"><sup>11</sup>B NMR</span><span class="count">0</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text"><sup>29</sup>Si NMR</span><span class="count">0</span></label>
+          </div>
+        </div>
+
+        <!-- 频率 -->
+        <div class="filter-group">
+          <div class="group-head">频率 <span class="caret">▾</span></div>
+          <div class="group-body">
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">400 MHz</span><span class="count">0</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">500 MHz</span><span class="count">0</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">600 MHz</span><span class="count">2</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">151 MHz</span><span class="count">1</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">800 MHz</span><span class="count">0</span></label>
+            <div class="show-more">展开更多 ▾</div>
+          </div>
+        </div>
+
+        <!-- 溶剂 -->
+        <div class="filter-group">
+          <div class="group-head">溶剂 <span class="caret">▾</span></div>
+          <div class="group-body">
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">CDCl<sub>3</sub></span><span class="count">3</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">DMSO-d<sub>6</sub></span><span class="count">0</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">CD<sub>3</sub>OD</span><span class="count">0</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">C<sub>6</sub>D<sub>6</sub></span><span class="count">0</span></label>
+            <label class="checkbox-row"><input type="checkbox" /><span class="label-text">D<sub>2</sub>O</span><span class="count">0</span></label>
+            <div class="show-more">展开更多 ▾</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右侧结果 -->
+      <main class="results">
+        <div class="result-head">
+          <div class="result-count">搜索到 <b>3</b> 条 NMR 记录</div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="nmr-table">
+            <thead>
+              <tr>
+                <th class="col-mol">分子结构</th>
+                <th class="col-src">来源</th>
+                <th class="col-type">核磁类别</th>
+                <th class="col-freq">频率</th>
+                <th class="col-solvent">溶剂</th>
+                <th class="col-shift">化学位移</th>
+                <th class="col-atom">
+                  原子总数
+                  <span class="th-hint" title="该核种原子总数">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>
+                  </span>
+                </th>
+                <th class="col-atomenv">
+                  不同环境数
+                  <span class="th-hint" title="该核种处于不同化学环境的原子数">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>
+                  </span>
+                </th>
+                <th class="col-atomabs">
+                  抽取峰数
+                  <span class="th-hint" title="从 NMR 描述中抽取的峰数总和">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>
+                  </span>
+                </th>
+                <th class="col-note">注释</th>
+                <th class="col-op">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <!-- 行 1 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <!-- cis-decalin with stereo H -->
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="40,38 20,60 40,82 80,82 100,60 80,38" />
+                      <polygon points="80,38 100,60 80,82 120,82 140,60 120,38" />
+                      <!-- stereo wedges (H up and down) -->
+                      <text x="52" y="34" font-size="10" fill="#1f2329" stroke="none" font-family="serif">H</text>
+                      <path d="M60 40 L72 48" stroke-dasharray="2 2"/>
+                      <text x="92" y="100" font-size="10" fill="#1f2329" stroke="none" font-family="serif">H</text>
+                      <path d="M100 80 L90 94" />
+                    </svg>
+                  </div>
+                </td>
+                <td>
+                  <div class="src-doi">10.1021/ol503410e</div>
+                  <a class="src-link">
+                    查看原文
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7"/><polyline points="8 7 17 7 17 16"/></svg>
+                  </a>
+                </td>
+                <td><span class="nmr-type-tag">1H NMR</span></td>
+                <td class="cell-freq">600 MHz</td>
+                <td class="cell-solvent">CDCl<sub>3</sub></td>
+                <td class="cell-shift">
+                  1.76 (dd, J = 13.4, 3.6 Hz, 4H), 1.67–1.59 (m, 4H), 1.56–1.41 (m, 5H), 1.23 (d, J = 12.5 Hz, 5H)
+                </td>
+                <td class="cell-num">18</td>
+                <td class="cell-num">9</td>
+                <td class="cell-num">4</td>
+                <td class="cell-note">cis-异构体，立体专一</td>
+                <td class="cell-op">
+                  <button class="op-btn preview-trigger" title="结构预览">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- 行 2 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="40,38 20,60 40,82 80,82 100,60 80,38" />
+                      <polygon points="80,38 100,60 80,82 120,82 140,60 120,38" />
+                    </svg>
+                  </div>
+                </td>
+                <td>
+                  <div class="src-doi">10.1021/acscatal.3c02084</div>
+                  <a class="src-link">
+                    查看原文
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7"/><polyline points="8 7 17 7 17 16"/></svg>
+                  </a>
+                </td>
+                <td><span class="nmr-type-tag c13">13C NMR</span></td>
+                <td class="cell-freq">151 MHz</td>
+                <td class="cell-solvent">CDCl<sub>3</sub></td>
+                <td class="cell-shift">43.53, 34.22, 26.75</td>
+                <td class="cell-num">10</td>
+                <td class="cell-num">3</td>
+                <td class="cell-num">3</td>
+                <td class="cell-note empty">—</td>
+                <td class="cell-op">
+                  <button class="op-btn preview-trigger" title="结构预览">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- 行 3 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="40,38 20,60 40,82 80,82 100,60 80,38" />
+                      <polygon points="80,38 100,60 80,82 120,82 140,60 120,38" />
+                    </svg>
+                  </div>
+                </td>
+                <td>
+                  <div class="src-doi">10.1021/acscatal.3c02084</div>
+                  <a class="src-link">
+                    查看原文
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7"/><polyline points="8 7 17 7 17 16"/></svg>
+                  </a>
+                </td>
+                <td><span class="nmr-type-tag">1H NMR</span></td>
+                <td class="cell-freq">600 MHz</td>
+                <td class="cell-solvent">CDCl<sub>3</sub></td>
+                <td class="cell-shift">1.70 (m, 8H), 1.62–1.48 (m, 8H), 1.43–1.18 (m, 2H)</td>
+                <td class="cell-num">18</td>
+                <td class="cell-num">3</td>
+                <td class="cell-num">3</td>
+                <td class="cell-note">反式构型，对称性较高</td>
+                <td class="cell-op">
+                  <button class="op-btn preview-trigger" title="结构预览">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination">
+          <button class="page-btn" title="上一页">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="page-btn">1</button>
+          <span class="page-btn ellipsis">…</span>
+          <button class="page-btn">3</button>
+          <button class="page-btn">4</button>
+          <button class="page-btn active">5</button>
+          <button class="page-btn">6</button>
+          <button class="page-btn">7</button>
+          <button class="page-btn">8</button>
+          <button class="page-btn" title="下一页">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <div class="page-size">
+            <select>
+              <option>10 条/页</option>
+              <option>20 条/页</option>
+              <option>50 条/页</option>
+              <option>100 条/页</option>
+            </select>
+          </div>
+          <div class="page-jump">
+            跳至
+            <input type="number" min="1" />
+            页
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 编辑检索面板 ============ -->
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-panel">
+    <button class="edit-back" id="editClose">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      返回
+    </button>
+    <select class="edit-mode-select" id="editModeSelect">
+      <option value="similarity">相似度检索</option>
+      <option value="substructure">子结构检索</option>
+    </select>
+    <div class="edit-input-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="editInput" type="text" value="C(CC1)CC2C1CCCC2" placeholder="输入 SMILES…" />
+      <button class="edit-input-clear" id="editClear" title="清空">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="edit-threshold" id="editThreshold">
+      <span class="thr-label">相似度阈值</span>
+      <div class="thr-input">
+        <input type="number" value="90" min="0" max="100" />
+        <span class="unit">%</span>
+      </div>
+    </div>
+    <button class="edit-submit">检索</button>
+  </div>
+  <div class="edit-backdrop" id="editBackdrop"></div>
+</div>
+
+<!-- ============ 结构预览弹窗 ============ -->
+<div class="preview-overlay" id="previewOverlay">
+  <div class="preview-modal">
+    <div class="preview-head">
+      <span class="preview-title">结构预览</span>
+      <button class="preview-close" id="previewClose" title="关闭">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="preview-canvas-wrap">
+      <div class="preview-toolbar">
+        <div class="preview-legend">
+          <span><span class="dot c"></span>C</span>
+          <span><span class="dot h"></span>H</span>
+        </div>
+        <div class="preview-mode-switch" id="previewModeSwitch">
+          <button data-mode="2d">2D</button>
+          <button data-mode="3d" class="active">3D</button>
+        </div>
+      </div>
+
+      <!-- 2D 视图 -->
+      <div class="preview-stage" id="stage2d" style="display:none;">
+        <svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="80,60 40,110 80,160 160,160 200,110 160,60" />
+          <polygon points="160,60 200,110 160,160 240,160 280,110 240,60" />
+        </svg>
+      </div>
+
+      <!-- 3D 视图（球棍模型） -->
+      <div class="preview-stage" id="stage3d">
+        <svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="cBall" cx="35%" cy="32%" r="65%">
+              <stop offset="0%" stop-color="#9af0bd"/>
+              <stop offset="55%" stop-color="#2ecc71"/>
+              <stop offset="100%" stop-color="#1f8a4f"/>
+            </radialGradient>
+            <radialGradient id="hBall" cx="35%" cy="32%" r="65%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="60%" stop-color="#dcdfe6"/>
+              <stop offset="100%" stop-color="#a7adb8"/>
+            </radialGradient>
+          </defs>
+          <!-- 双键（环己烷骨架近似展示） -->
+          <g stroke="#1f8a4f" stroke-width="6" stroke-linecap="round">
+            <line x1="100" y1="70" x2="60" y2="110"/>
+            <line x1="60" y1="110" x2="100" y2="160"/>
+            <line x1="100" y1="160" x2="160" y2="160"/>
+            <line x1="160" y1="160" x2="220" y2="160"/>
+            <line x1="220" y1="160" x2="260" y2="110"/>
+            <line x1="260" y1="110" x2="220" y2="70"/>
+            <line x1="220" y1="70" x2="160" y2="70"/>
+            <line x1="160" y1="70" x2="100" y2="70"/>
+            <line x1="160" y1="70" x2="160" y2="160"/>
+          </g>
+          <!-- C-H 键 -->
+          <g stroke="#9aa1ad" stroke-width="3" stroke-linecap="round">
+            <line x1="100" y1="70" x2="92" y2="40"/>
+            <line x1="60" y1="110" x2="28" y2="110"/>
+            <line x1="100" y1="160" x2="92" y2="190"/>
+            <line x1="160" y1="160" x2="160" y2="195"/>
+            <line x1="220" y1="160" x2="228" y2="190"/>
+            <line x1="260" y1="110" x2="292" y2="110"/>
+            <line x1="220" y1="70" x2="228" y2="40"/>
+            <line x1="160" y1="70" x2="160" y2="35"/>
+          </g>
+          <!-- C 原子 -->
+          <g>
+            <circle cx="100" cy="70"  r="14" fill="url(#cBall)"/>
+            <circle cx="60"  cy="110" r="14" fill="url(#cBall)"/>
+            <circle cx="100" cy="160" r="14" fill="url(#cBall)"/>
+            <circle cx="160" cy="160" r="14" fill="url(#cBall)"/>
+            <circle cx="220" cy="160" r="14" fill="url(#cBall)"/>
+            <circle cx="260" cy="110" r="14" fill="url(#cBall)"/>
+            <circle cx="220" cy="70"  r="14" fill="url(#cBall)"/>
+            <circle cx="160" cy="70"  r="14" fill="url(#cBall)"/>
+          </g>
+          <!-- H 原子 -->
+          <g>
+            <circle cx="92"  cy="40"  r="8" fill="url(#hBall)"/>
+            <circle cx="28"  cy="110" r="8" fill="url(#hBall)"/>
+            <circle cx="92"  cy="190" r="8" fill="url(#hBall)"/>
+            <circle cx="160" cy="195" r="8" fill="url(#hBall)"/>
+            <circle cx="228" cy="190" r="8" fill="url(#hBall)"/>
+            <circle cx="292" cy="110" r="8" fill="url(#hBall)"/>
+            <circle cx="228" cy="40"  r="8" fill="url(#hBall)"/>
+            <circle cx="160" cy="35"  r="8" fill="url(#hBall)"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- 坐标轴 -->
+      <svg class="preview-axis" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+        <line x1="10" y1="40" x2="10" y2="10" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+        <text x="4" y="10" font-size="9" fill="#22c55e">Y</text>
+        <line x1="10" y1="40" x2="40" y2="40" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>
+        <text x="42" y="44" font-size="9" fill="#ef4444">X</text>
+        <circle cx="10" cy="40" r="2.5" fill="#3b82f6"/>
+      </svg>
+
+      <!-- 工具按钮 -->
+      <div class="preview-tools">
+        <button title="放大">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </button>
+        <button title="缩小">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </button>
+        <button title="居中">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="preview-foot">
+      <span id="previewIndex">1/3</span>
+      <div class="preview-nav">
+        <button id="previewPrev" title="上一个">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button id="previewNext" title="下一个">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 折叠筛选组
+  document.querySelectorAll('.group-head').forEach(h => {
+    h.onclick = () => h.parentElement.classList.toggle('collapsed');
+  });
+
+  // 已应用筛选标签删除
+  document.querySelectorAll('.applied-tag .x').forEach(x => {
+    x.onclick = (e) => {
+      e.stopPropagation();
+      x.parentElement.remove();
+    };
+  });
+
+  // 编辑检索弹层
+  const editBtn = document.getElementById('editBtn');
+  const editOverlay = document.getElementById('editOverlay');
+  const editClose = document.getElementById('editClose');
+  const editBackdrop = document.getElementById('editBackdrop');
+  const editInput = document.getElementById('editInput');
+
+  function openEdit() {
+    editOverlay.classList.add('show');
+    setTimeout(() => { editInput.focus(); editInput.select(); }, 0);
+  }
+  function closeEdit() { editOverlay.classList.remove('show'); }
+
+  editBtn.addEventListener('click', openEdit);
+  editClose.addEventListener('click', closeEdit);
+  editBackdrop.addEventListener('click', closeEdit);
+  document.getElementById('editClear').addEventListener('click', () => {
+    editInput.value = '';
+    editInput.focus();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && editOverlay.classList.contains('show')) closeEdit();
+  });
+
+  // 检索模式联动:仅相似度检索显示阈值
+  const editModeSelect = document.getElementById('editModeSelect');
+  const editThreshold = document.getElementById('editThreshold');
+  editModeSelect.addEventListener('change', () => {
+    editThreshold.classList.toggle('hidden', editModeSelect.value !== 'similarity');
+  });
+
+  // 结构预览弹窗
+  const previewOverlay = document.getElementById('previewOverlay');
+  const previewClose = document.getElementById('previewClose');
+  const previewIndex = document.getElementById('previewIndex');
+  const previewPrev = document.getElementById('previewPrev');
+  const previewNext = document.getElementById('previewNext');
+  const previewModeSwitch = document.getElementById('previewModeSwitch');
+  const stage2d = document.getElementById('stage2d');
+  const stage3d = document.getElementById('stage3d');
+  const previewTriggers = document.querySelectorAll('.preview-trigger');
+  const totalRows = previewTriggers.length;
+  let curIdx = 0;
+
+  function updateIndex() {
+    previewIndex.textContent = (curIdx + 1) + '/' + totalRows;
+    previewPrev.disabled = curIdx === 0;
+    previewNext.disabled = curIdx === totalRows - 1;
+  }
+  function openPreview(idx) {
+    curIdx = idx;
+    updateIndex();
+    previewOverlay.classList.add('show');
+  }
+  function closePreview() { previewOverlay.classList.remove('show'); }
+
+  previewTriggers.forEach((btn, i) => {
+    btn.addEventListener('click', () => openPreview(i));
+  });
+  previewClose.addEventListener('click', closePreview);
+  previewOverlay.addEventListener('click', e => {
+    if (e.target === previewOverlay) closePreview();
+  });
+  previewPrev.addEventListener('click', () => { if (curIdx > 0) { curIdx--; updateIndex(); } });
+  previewNext.addEventListener('click', () => { if (curIdx < totalRows - 1) { curIdx++; updateIndex(); } });
+
+  // 2D / 3D 切换
+  previewModeSwitch.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      previewModeSwitch.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      const is3d = b.dataset.mode === '3d';
+      stage3d.style.display = is3d ? 'flex' : 'none';
+      stage2d.style.display = is3d ? 'none' : 'flex';
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && previewOverlay.classList.contains('show')) closePreview();
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>化学物质库 - 检索结果</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f4f5f7;
+    color: #1f2329;
+    font-size: 14px;
+  }
+
+  /* ============ 顶部搜索条 ============ */
+  .topbar {
+    background: #fff;
+    padding: 18px 40px 0;
+    border-bottom: 1px solid #ece8f5;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .search-row {
+    max-width: 820px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .search-input-wrap {
+    flex: 1;
+    background: #f5f3fa;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+  }
+  .search-input-wrap:focus-within {
+    background: #fff;
+    border-color: #c7d2fe;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.12);
+  }
+  .search-input-wrap input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 15px;
+  }
+  .adv-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  .adv-btn:hover { background: #f3f4f6; color: #6366f1; }
+  .submit-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.32);
+  }
+
+  /* ============ 数据库 Tab ============ */
+  .db-tabs {
+    max-width: 820px;
+    margin: 14px auto 0;
+    display: flex;
+    gap: 36px;
+    padding: 0 4px;
+    justify-content: center;
+  }
+  .db-tab {
+    padding: 10px 0 14px;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.18s;
+  }
+  .db-tab:hover { color: #1f2329; }
+  .db-tab.active {
+    color: #6366f1;
+    font-weight: 500;
+    border-bottom-color: #6366f1;
+  }
+
+  /* ============ 主体布局 ============ */
+  .container {
+    max-width: 1180px;
+    margin: 20px auto 60px;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 20px;
+    padding: 0 40px;
+  }
+
+  /* ============ 左侧筛选 ============ */
+  .filter-panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 18px;
+    height: fit-content;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  }
+  .filter-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .filter-head .title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2329;
+  }
+  .reset-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .reset-btn:hover { color: #6366f1; }
+
+  /* 已应用筛选 */
+  .applied {
+    margin: 14px 0;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f0eef5;
+  }
+  .applied-label {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 8px;
+  }
+  .applied-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .applied-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: #ede9ff;
+    color: #6366f1;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .applied-tag .x {
+    cursor: pointer;
+    color: #818cf8;
+  }
+  .applied-tag .x:hover { color: #4f46e5; }
+
+  /* 折叠区 */
+  .filter-group {
+    border-bottom: 1px solid #f0eef5;
+    padding: 14px 0;
+  }
+  .filter-group:last-child { border-bottom: none; }
+  .group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f2329;
+    margin-bottom: 10px;
+  }
+  .group-head .caret { color: #9ca3af; transition: transform 0.2s; }
+  .filter-group.collapsed .group-head .caret { transform: rotate(-90deg); }
+  .filter-group.collapsed .group-body { display: none; }
+
+  .radio-row, .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 2px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #4a4f59;
+  }
+  .radio-row:hover, .checkbox-row:hover { color: #1f2329; }
+  .radio-row input, .checkbox-row input { accent-color: #6366f1; }
+  .radio-row .label-text, .checkbox-row .label-text { flex: 1; }
+  .radio-row .count, .checkbox-row .count {
+    color: #9ca3af;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .radio-row:hover .count, .checkbox-row:hover .count { color: #6366f1; }
+
+  .range-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .range-row input {
+    flex: 1;
+    width: 0;
+    padding: 6px 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 12px;
+    outline: none;
+  }
+  .range-row input:focus { border-color: #818cf8; }
+  .range-row .dash { color: #9ca3af; font-size: 12px; }
+  .range-apply {
+    margin-top: 8px;
+    width: 100%;
+    padding: 6px 0;
+    background: #ede9ff;
+    color: #6366f1;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .range-apply:hover { background: #dcd5ff; }
+
+  /* ============ 主结果区 ============ */
+  .results {
+    background: transparent;
+  }
+  .result-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding: 0 4px;
+  }
+  .result-count {
+    font-size: 13px;
+    color: #4a4f59;
+  }
+  .result-count b { color: #6366f1; font-weight: 600; }
+  .result-actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .action-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .action-link:hover { color: #6366f1; }
+  .sort-select {
+    border: none;
+    background: transparent;
+    color: #4a4f59;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* 卡片网格 */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #ece8f5;
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.10);
+    transform: translateY(-2px);
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-index {
+    color: #c4c8d2;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .card-cas {
+    color: #6366f1;
+    font-weight: 500;
+    font-size: 13px;
+  }
+  .card-mol {
+    height: 130px;
+    background:
+      linear-gradient(#f4f5f7 1px, transparent 1px),
+      linear-gradient(90deg, #f4f5f7 1px, transparent 1px),
+      #fff;
+    background-size: 12px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1f2329;
+  }
+  .card-formula {
+    font-size: 13px;
+    color: #4a4f59;
+  }
+  .card-formula .label { color: #9ca3af; }
+  .card-formula sub { font-size: 0.78em; }
+  .card-name {
+    font-size: 13px;
+    color: #1f2329;
+    line-height: 1.3;
+    word-break: break-word;
+    min-height: 34px;
+  }
+  .card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .stat-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 8px;
+    background: #faf9ff;
+    border-radius: 6px;
+    color: #4a4f59;
+    font-size: 13px;
+  }
+  .stat-box svg { color: #8b5cf6; }
+
+  /* 分页 */
+  .pagination {
+    margin-top: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .page-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #ece8f5;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #4a4f59;
+    font-size: 13px;
+  }
+  .page-btn:hover:not(.active):not(:disabled) {
+    border-color: #c7d2fe;
+    color: #6366f1;
+  }
+  .page-btn.active {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+  }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<!-- 顶部搜索栏 -->
+<header class="topbar">
+  <div class="search-row">
+    <div class="search-input-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" value="C9H8O4" placeholder="输入物质名称、CAS号、分子式、InChIKey 或 SMILES..." />
+      <button class="adv-btn">
+        高级检索
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>
+      </button>
+    </div>
+    <button class="submit-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+    </button>
+  </div>
+
+  <!-- 数据库切换 Tab -->
+  <div class="db-tabs">
+    <div class="db-tab active" data-tab="substance">化学物质库</div>
+    <div class="db-tab" data-tab="reaction">化学反应库</div>
+    <div class="db-tab" data-tab="nmr">NMRexp</div>
+    <div class="db-tab" data-tab="qchem">分子骨架量子计算数据库</div>
+  </div>
+</header>
+
+<!-- 主体 -->
+<div class="container">
+
+  <!-- 左侧筛选 -->
+  <aside class="filter-panel">
+    <div class="filter-head">
+      <span class="title">筛选</span>
+      <button class="reset-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        重置
+      </button>
+    </div>
+
+    <div class="applied">
+      <div class="applied-label">已应用筛选</div>
+      <div class="applied-tags">
+        <span class="applied-tag">分子式: C9H8O4 <span class="x">×</span></span>
+      </div>
+    </div>
+
+    <!-- 物质类型 -->
+    <div class="filter-group">
+      <div class="group-head">物质类型 <span class="caret">▾</span></div>
+      <div class="group-body">
+        <label class="checkbox-row"><input type="checkbox" /><span class="label-text">isocyclic（碳环类）</span><span class="count">528</span></label>
+        <label class="checkbox-row"><input type="checkbox" /><span class="label-text">heterocyclic（杂环类）</span><span class="count">412</span></label>
+        <label class="checkbox-row"><input type="checkbox" /><span class="label-text">aliphatic（脂肪族）</span><span class="count">186</span></label>
+        <label class="checkbox-row"><input type="checkbox" /><span class="label-text">aromatic（芳香族）</span><span class="count">374</span></label>
+        <label class="checkbox-row"><input type="checkbox" /><span class="label-text">organometallic（有机金属）</span><span class="count">42</span></label>
+        <label class="checkbox-row"><input type="checkbox" /><span class="label-text">inorganic（无机化合物）</span><span class="count">68</span></label>
+      </div>
+    </div>
+
+    <!-- 分子量 -->
+    <div class="filter-group">
+      <div class="group-head">分子量 <span class="caret">▾</span></div>
+      <div class="group-body">
+        <label class="radio-row"><input type="radio" name="mw" /><span class="label-text">≤ 100</span><span class="count">73</span></label>
+        <label class="radio-row"><input type="radio" name="mw" /><span class="label-text">100 – 300</span><span class="count">896</span></label>
+        <label class="radio-row"><input type="radio" name="mw" /><span class="label-text">300 – 500</span><span class="count">238</span></label>
+        <label class="radio-row"><input type="radio" name="mw" /><span class="label-text">500 – 1000</span><span class="count">62</span></label>
+        <label class="radio-row"><input type="radio" name="mw" /><span class="label-text">&gt; 1000</span><span class="count">15</span></label>
+        <div class="range-row">
+          <input type="number" placeholder="最小" />
+          <span class="dash">—</span>
+          <input type="number" placeholder="最大" />
+        </div>
+        <button class="range-apply">应用范围</button>
+      </div>
+    </div>
+
+    <!-- 数据来源 -->
+    <div class="filter-group">
+      <div class="group-head">数据来源 <span class="caret">▾</span></div>
+      <div class="group-body">
+        <label class="checkbox-row"><input type="checkbox" /><span class="label-text">论文</span><span class="count">948</span></label>
+        <label class="checkbox-row"><input type="checkbox" /><span class="label-text">专利</span><span class="count">516</span></label>
+      </div>
+    </div>
+
+    <!-- 关联反应数量 -->
+    <div class="filter-group">
+      <div class="group-head">关联反应数量 <span class="caret">▾</span></div>
+      <div class="group-body">
+        <label class="radio-row"><input type="radio" name="rxn" /><span class="label-text">0</span><span class="count">214</span></label>
+        <label class="radio-row"><input type="radio" name="rxn" /><span class="label-text">1 – 10</span><span class="count">486</span></label>
+        <label class="radio-row"><input type="radio" name="rxn" /><span class="label-text">11 – 50</span><span class="count">352</span></label>
+        <label class="radio-row"><input type="radio" name="rxn" /><span class="label-text">51 – 200</span><span class="count">168</span></label>
+        <label class="radio-row"><input type="radio" name="rxn" /><span class="label-text">201 – 1000</span><span class="count">52</span></label>
+        <label class="radio-row"><input type="radio" name="rxn" /><span class="label-text">&gt; 1000</span><span class="count">12</span></label>
+      </div>
+    </div>
+
+    <!-- 更新时间 -->
+    <div class="filter-group">
+      <div class="group-head">更新时间 <span class="caret">▾</span></div>
+      <div class="group-body">
+        <label class="radio-row"><input type="radio" name="time" /><span class="label-text">近 7 天</span><span class="count">36</span></label>
+        <label class="radio-row"><input type="radio" name="time" /><span class="label-text">近半个月</span><span class="count">82</span></label>
+        <label class="radio-row"><input type="radio" name="time" /><span class="label-text">近一个月</span><span class="count">154</span></label>
+        <label class="radio-row"><input type="radio" name="time" /><span class="label-text">近三个月</span><span class="count">368</span></label>
+        <label class="radio-row"><input type="radio" name="time" /><span class="label-text">近半年</span><span class="count">615</span></label>
+        <label class="radio-row"><input type="radio" name="time" /><span class="label-text">近一年</span><span class="count">892</span></label>
+        <label class="radio-row"><input type="radio" name="time" /><span class="label-text">近三年</span><span class="count">1,236</span></label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 右侧结果 -->
+  <main class="results">
+    <div class="result-head">
+      <div class="result-count">搜索到 <b>1,284</b> 个物质</div>
+      <div class="result-actions">
+        <select class="sort-select">
+          <option>相关性</option>
+          <option>分子量升序</option>
+          <option>分子量降序</option>
+          <option>关联反应数</option>
+          <option>更新时间</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 卡片网格 -->
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-index">1</span>
+          <span class="card-cas">CAS 50-78-2</span>
+        </div>
+        <div class="card-mol">
+          <svg width="160" height="110" viewBox="0 0 160 110">
+            <g stroke="#1f2329" stroke-width="1.4" fill="none">
+              <polygon points="60,30 90,30 105,55 90,80 60,80 45,55"/>
+              <line x1="62" y1="33" x2="88" y2="33"/>
+              <line x1="62" y1="77" x2="88" y2="77"/>
+            </g>
+            <text x="20" y="60" font-size="11" fill="#dc2626">HO</text>
+            <line x1="32" y1="56" x2="46" y2="56" stroke="#1f2329"/>
+            <text x="108" y="40" font-size="11" fill="#dc2626">O</text>
+            <line x1="105" y1="55" x2="116" y2="42" stroke="#1f2329"/>
+            <text x="118" y="78" font-size="11" fill="#dc2626">OH</text>
+            <line x1="105" y1="55" x2="118" y2="73" stroke="#1f2329"/>
+          </svg>
+        </div>
+        <div class="card-formula"><span class="label">分子式：</span>C<sub>9</sub>H<sub>8</sub>O<sub>4</sub></div>
+        <div class="card-name">2-acetoxybenzoic acid（阿司匹林）</div>
+        <div class="card-stats">
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg> 612</div>
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 3,428</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-index">2</span>
+          <span class="card-cas">CAS 331-39-5</span>
+        </div>
+        <div class="card-mol">
+          <svg width="160" height="110" viewBox="0 0 160 110">
+            <g stroke="#1f2329" stroke-width="1.4" fill="none">
+              <polygon points="70,30 100,30 115,55 100,80 70,80 55,55"/>
+              <line x1="72" y1="33" x2="98" y2="33"/>
+              <line x1="72" y1="77" x2="98" y2="77"/>
+            </g>
+            <text x="118" y="44" font-size="11" fill="#dc2626">OH</text>
+            <line x1="115" y1="55" x2="120" y2="48" stroke="#1f2329"/>
+            <text x="118" y="74" font-size="11" fill="#dc2626">OH</text>
+            <line x1="115" y1="55" x2="120" y2="68" stroke="#1f2329"/>
+            <line x1="55" y1="55" x2="35" y2="55" stroke="#1f2329"/>
+            <line x1="35" y1="50" x2="35" y2="60" stroke="#1f2329"/>
+            <line x1="35" y1="55" x2="20" y2="45" stroke="#1f2329"/>
+            <text x="6" y="40" font-size="11" fill="#dc2626">HO</text>
+            <line x1="35" y1="55" x2="20" y2="65" stroke="#1f2329"/>
+            <text x="2" y="74" font-size="11" fill="#dc2626">O</text>
+          </svg>
+        </div>
+        <div class="card-formula"><span class="label">分子式：</span>C<sub>9</sub>H<sub>8</sub>O<sub>4</sub></div>
+        <div class="card-name">caffeic acid（咖啡酸）</div>
+        <div class="card-stats">
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg> 454</div>
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 2,595</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-index">3</span>
+          <span class="card-cas">CAS 24589-99-9</span>
+        </div>
+        <div class="card-mol">
+          <svg width="160" height="110" viewBox="0 0 160 110">
+            <g stroke="#1f2329" stroke-width="1.4" fill="none">
+              <polygon points="55,30 85,30 100,55 85,80 55,80 40,55"/>
+              <line x1="57" y1="33" x2="83" y2="33"/>
+              <line x1="57" y1="77" x2="83" y2="77"/>
+            </g>
+            <text x="105" y="40" font-size="11" fill="#dc2626">OH</text>
+            <line x1="100" y1="55" x2="108" y2="46" stroke="#1f2329"/>
+            <text x="20" y="40" font-size="11" fill="#dc2626">O</text>
+            <line x1="40" y1="55" x2="30" y2="42" stroke="#1f2329"/>
+            <line x1="40" y1="55" x2="20" y2="55" stroke="#1f2329"/>
+            <text x="105" y="78" font-size="11" fill="#dc2626">OMe</text>
+            <line x1="100" y1="55" x2="108" y2="68" stroke="#1f2329"/>
+          </svg>
+        </div>
+        <div class="card-formula"><span class="label">分子式：</span>C<sub>9</sub>H<sub>8</sub>O<sub>4</sub></div>
+        <div class="card-name">methyl 3-formyl-4-hydroxybenzoate</div>
+        <div class="card-stats">
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg> 248</div>
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 158</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-index">4</span>
+          <span class="card-cas">CAS 2613-89-0</span>
+        </div>
+        <div class="card-mol">
+          <svg width="160" height="110" viewBox="0 0 160 110">
+            <g stroke="#1f2329" stroke-width="1.4" fill="none">
+              <polygon points="80,30 110,30 125,55 110,80 80,80 65,55"/>
+              <line x1="82" y1="33" x2="108" y2="33"/>
+              <line x1="82" y1="77" x2="108" y2="77"/>
+              <line x1="65" y1="55" x2="50" y2="55"/>
+              <line x1="50" y1="55" x2="42" y2="42"/>
+              <line x1="50" y1="55" x2="42" y2="68"/>
+            </g>
+            <text x="22" y="40" font-size="11" fill="#dc2626">HO</text>
+            <text x="22" y="74" font-size="11" fill="#dc2626">HO</text>
+            <text x="35" y="58" font-size="11">O</text>
+          </svg>
+        </div>
+        <div class="card-formula"><span class="label">分子式：</span>C<sub>9</sub>H<sub>8</sub>O<sub>4</sub></div>
+        <div class="card-name">phenylmalonic acid（苯丙二酸）</div>
+        <div class="card-stats">
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg> 160</div>
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 154</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-index">5</span>
+          <span class="card-cas">CAS 4906-47-8</span>
+        </div>
+        <div class="card-mol">
+          <svg width="160" height="110" viewBox="0 0 160 110">
+            <g stroke="#1f2329" stroke-width="1.4" fill="none">
+              <polygon points="60,30 90,30 105,55 90,80 60,80 45,55"/>
+              <line x1="62" y1="33" x2="88" y2="33"/>
+              <line x1="62" y1="77" x2="88" y2="77"/>
+              <polygon points="105,55 130,40 130,70"/>
+            </g>
+            <text x="135" y="48" font-size="11" fill="#dc2626">O</text>
+            <text x="135" y="76" font-size="11" fill="#dc2626">O</text>
+            <text x="34" y="58" font-size="11" fill="#dc2626">OH</text>
+          </svg>
+        </div>
+        <div class="card-formula"><span class="label">分子式：</span>C<sub>9</sub>H<sub>8</sub>O<sub>4</sub></div>
+        <div class="card-name">1,4-benzodioxane-2-carboxylic acid</div>
+        <div class="card-stats">
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg> 204</div>
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 108</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-index">6</span>
+          <span class="card-cas">CAS 99699-42-0</span>
+        </div>
+        <div class="card-mol">
+          <svg width="160" height="110" viewBox="0 0 160 110">
+            <g stroke="#1f2329" stroke-width="1.4" fill="none">
+              <polygon points="70,30 100,30 115,55 100,80 70,80 55,55"/>
+              <line x1="72" y1="33" x2="98" y2="33"/>
+              <line x1="72" y1="77" x2="98" y2="77"/>
+              <line x1="55" y1="55" x2="40" y2="50"/>
+              <line x1="40" y1="50" x2="30" y2="55"/>
+            </g>
+            <text x="2" y="58" font-size="11" fill="#dc2626">HO</text>
+            <text x="118" y="40" font-size="11" fill="#dc2626">OH</text>
+            <text x="118" y="78" font-size="11" fill="#dc2626">OH</text>
+            <text x="13" y="36" font-size="11" fill="#dc2626">O</text>
+          </svg>
+        </div>
+        <div class="card-formula"><span class="label">分子式：</span>C<sub>9</sub>H<sub>8</sub>O<sub>4</sub></div>
+        <div class="card-name">2,4-dihydroxycinnamic acid</div>
+        <div class="card-stats">
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg> 90</div>
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 59</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-index">7</span>
+          <span class="card-cas">CAS 56671-28-4</span>
+        </div>
+        <div class="card-mol">
+          <svg width="160" height="110" viewBox="0 0 160 110">
+            <g stroke="#1f2329" stroke-width="1.4" fill="none">
+              <polygon points="55,35 85,35 100,55 85,75 55,75 40,55"/>
+              <polygon points="100,55 125,42 125,68"/>
+            </g>
+            <text x="20" y="40" font-size="11" fill="#dc2626">O</text>
+            <text x="130" y="48" font-size="11">O</text>
+            <text x="125" y="78" font-size="11" fill="#dc2626">OH</text>
+            <text x="22" y="74" font-size="11" fill="#dc2626">O</text>
+          </svg>
+        </div>
+        <div class="card-formula"><span class="label">分子式：</span>C<sub>9</sub>H<sub>8</sub>O<sub>4</sub></div>
+        <div class="card-name">4,5,6,7-tetrahydro-4-oxobenzofuran-3-…</div>
+        <div class="card-stats">
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg> 122</div>
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 8</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-index">8</span>
+          <span class="card-cas">CAS 1944-57-6</span>
+        </div>
+        <div class="card-mol">
+          <svg width="160" height="110" viewBox="0 0 160 110">
+            <g stroke="#1f2329" stroke-width="1.4" fill="none">
+              <polygon points="80,25 110,25 125,50 110,75 80,75 65,50"/>
+              <line x1="82" y1="28" x2="108" y2="28"/>
+              <line x1="65" y1="50" x2="50" y2="58"/>
+              <line x1="50" y1="58" x2="40" y2="50"/>
+              <line x1="40" y1="50" x2="30" y2="58"/>
+            </g>
+            <text x="42" y="38" font-size="11" fill="#dc2626">OH</text>
+            <text x="6" y="62" font-size="11" fill="#dc2626">HO</text>
+            <text x="22" y="78" font-size="11" fill="#dc2626">O</text>
+            <text x="56" y="76" font-size="11" fill="#dc2626">O</text>
+          </svg>
+        </div>
+        <div class="card-formula"><span class="label">分子式：</span>C<sub>9</sub>H<sub>8</sub>O<sub>4</sub></div>
+        <div class="card-name">hydroxyphenylpyruvate</div>
+        <div class="card-stats">
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg> 53</div>
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 70</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-index">9</span>
+          <span class="card-cas">CAS 26767-06-6</span>
+        </div>
+        <div class="card-mol">
+          <svg width="160" height="110" viewBox="0 0 160 110">
+            <g stroke="#1f2329" stroke-width="1.4" fill="none">
+              <polygon points="75,30 105,30 120,55 105,80 75,80 60,55"/>
+              <line x1="77" y1="33" x2="103" y2="33"/>
+              <line x1="60" y1="55" x2="48" y2="48"/>
+              <line x1="48" y1="48" x2="35" y2="55"/>
+              <line x1="35" y1="55" x2="22" y2="48"/>
+            </g>
+            <text x="2" y="52" font-size="11">O</text>
+            <text x="13" y="40" font-size="11" fill="#dc2626">HO</text>
+            <text x="40" y="76" font-size="11" fill="#dc2626">O</text>
+            <text x="125" y="40" font-size="11" fill="#dc2626">OMe</text>
+          </svg>
+        </div>
+        <div class="card-formula"><span class="label">分子式：</span>C<sub>9</sub>H<sub>8</sub>O<sub>4</sub></div>
+        <div class="card-name">2-(2-methoxyphenyl)-2-oxoacetic acid</div>
+        <div class="card-stats">
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg> 19</div>
+          <div class="stat-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 65</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination">
+      <button class="page-btn" disabled>‹</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">4</button>
+      <button class="page-btn">5</button>
+      <span style="color:#9ca3af; padding: 0 4px;">…</span>
+      <button class="page-btn">143</button>
+      <button class="page-btn">›</button>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Tab 切换（演示）
+  document.querySelectorAll('.db-tab').forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll('.db-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    };
+  });
+
+  // 折叠
+  document.querySelectorAll('.group-head').forEach(h => {
+    h.onclick = () => h.parentElement.classList.toggle('collapsed');
+  });
+
+  // 已应用筛选标签删除
+  document.querySelectorAll('.applied-tag .x').forEach(x => {
+    x.onclick = (e) => {
+      e.stopPropagation();
+      x.parentElement.remove();
+    };
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>分子骨架量子计算数据库 - 检索</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #1f2329;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ====== 主页 iframe 背景 ====== */
+  .page-bg {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    z-index: 0;
+  }
+
+  /* ====== 弹窗遮罩 ====== */
+  .modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 30, 0.32);
+    backdrop-filter: blur(2px);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    z-index: 999;
+    padding-top: 90px;
+  }
+  .modal-mask.show { display: flex; }
+
+  /* ====== 弹窗容器 ====== */
+  .modal {
+    width: 880px;
+    max-width: 92vw;
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 30px 32px;
+    box-shadow: 0 20px 60px rgba(50, 30, 110, 0.18);
+    position: relative;
+    animation: pop 0.18s ease;
+  }
+  @keyframes pop {
+    from { transform: translateY(-8px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  /* ====== 标题 ====== */
+  .modal-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1f2329;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .modal-title .dot {
+    width: 6px;
+    height: 22px;
+    background: linear-gradient(180deg, #6366f1, #8b5cf6);
+    border-radius: 3px;
+  }
+
+  /* ====== 关闭按钮 ====== */
+  .modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .modal-close:hover { background: #f3f4f6; color: #4b5563; }
+
+  /* ====== 搜索框 ====== */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: all 0.2s;
+  }
+  .search-bar:focus-within {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+  }
+  .search-bar svg { color: #9ca3af; flex-shrink: 0; }
+  .search-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    background: transparent;
+    color: #1f2329;
+  }
+  .search-bar input::placeholder { color: #b7bcc4; }
+
+  /* ====== 板块标题 ====== */
+  .section { margin-top: 26px; }
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .section-head .title {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  .clear-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 4px;
+    border-radius: 4px;
+    position: relative;
+  }
+  .clear-btn:hover { color: #ef4444; background: #fef2f2; }
+  .clear-btn::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    background: #1f2329;
+    color: #fff;
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+    pointer-events: none;
+    z-index: 20;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  .clear-btn::before {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 2px);
+    right: 10px;
+    border: 5px solid transparent;
+    border-top-color: #1f2329;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+    pointer-events: none;
+    z-index: 20;
+  }
+  .clear-btn:hover::after,
+  .clear-btn:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  /* ====== 历史 chips ====== */
+  .history-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f5f3fa;
+    border-radius: 16px;
+    font-size: 13px;
+    color: #4a4f59;
+    cursor: pointer;
+    transition: all 0.15s;
+    max-width: 100%;
+  }
+  .chip:hover { background: #ebe7f5; color: #1f2329; }
+  .chip .chip-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 420px;
+  }
+  .chip .x {
+    color: #b7bcc4;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .chip .x:hover { color: #6b7280; }
+
+  /* ====== 快捷引导 ====== */
+  .quick-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 14px;
+  }
+  .quick-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid #ece8f5;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.18s;
+    overflow: hidden;
+  }
+  .quick-item:hover {
+    border-color: #c7d2fe;
+    background: #faf9ff;
+  }
+  .quick-tag {
+    font-size: 12px;
+    color: #6366f1;
+    background: #ede9ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .quick-text {
+    font-size: 13px;
+    color: #4a4f59;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>
+</head>
+<body>
+
+<!-- 主页作为背景 -->
+<iframe class="page-bg" src="chem_ai_search.html"></iframe>
+
+<!-- 弹窗 -->
+<div class="modal-mask show" id="modalMask">
+  <div class="modal">
+    <button class="modal-close" id="closeBtn" title="关闭">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <!-- 标题 -->
+    <div class="modal-title">
+      <span class="dot"></span>
+      分子骨架量子计算数据库
+    </div>
+
+    <!-- 搜索框 -->
+    <div class="search-bar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="searchInput" type="text" placeholder="输入 SMILES 或 InChIKey" />
+    </div>
+
+    <!-- 搜索历史 -->
+    <div class="section">
+      <div class="section-head">
+        <span class="title">搜索历史</span>
+        <button class="clear-btn" data-tip="清空搜索历史" title="清空搜索历史">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
+      <div class="history-chips">
+        <span class="chip"><span class="chip-text">O=C1C(Cl)=CC(=NSc2ccccn2)C=C1Cl</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">O=C1C=CC(=NSc2ccccn2)C=C1</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">c1ccc2ccccc2c1</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">JOHRQANCRKQLHR-UHFFFAOYSA-N</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">BSYNRYMUTXBXSQ-UHFFFAOYSA-N</span><span class="x">×</span></span>
+      </div>
+    </div>
+
+    <!-- 快捷引导 -->
+    <div class="section">
+      <div class="section-head">
+        <span class="title">快捷引导</span>
+      </div>
+      <div class="quick-list">
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">O=C1C(Cl)=CC(=NSc2ccccn2)C=C1Cl</span></div>
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">O=C1C=CC(=NSc2ccccn2)C=C1</span></div>
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">c1ccc2ccccc2c1（萘骨架）</span></div>
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">CC(=O)OC1=CC=CC=C1C(=O)O</span></div>
+        <div class="quick-item"><span class="quick-tag">InChIKey</span><span class="quick-text">JOHRQANCRKQLHR-UHFFFAOYSA-N</span></div>
+        <div class="quick-item"><span class="quick-tag">InChIKey</span><span class="quick-text">BSYNRYMUTXBXSQ-UHFFFAOYSA-N</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const mask = document.getElementById('modalMask');
+  const input = document.getElementById('searchInput');
+
+  // 关闭
+  document.getElementById('closeBtn').onclick = () => mask.classList.remove('show');
+  mask.addEventListener('click', (e) => {
+    if (e.target === mask) mask.classList.remove('show');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') mask.classList.remove('show');
+  });
+
+  // chip 删除
+  document.querySelectorAll('.chip .x').forEach(x => {
+    x.onclick = (e) => {
+      e.stopPropagation();
+      x.parentElement.remove();
+    };
+  });
+
+  // 历史 chip → 填入
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.onclick = (e) => {
+      if (e.target.classList.contains('x')) return;
+      input.value = chip.querySelector('.chip-text').textContent;
+      input.focus();
+    };
+  });
+
+  // 快捷引导 → 填入
+  document.querySelectorAll('.quick-item').forEach(item => {
+    item.onclick = () => {
+      input.value = item.querySelector('.quick-text').textContent;
+      input.focus();
+    };
+  });
+</script>
+
+</body>
+</html>

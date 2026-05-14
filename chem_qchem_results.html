@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>量子计算 - 检索结果</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #1f2329;
+    font-size: 14px;
+  }
+
+  /* ============ 整体布局 ============ */
+  .app { display: flex; min-height: 100vh; }
+
+  /* ============ 左侧 Bohrium 导航栏 ============ */
+  .sidebar {
+    width: 220px;
+    background: #f0edf5;
+    border-right: 1px solid #e3dff0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .logo { display: flex; align-items: center; gap: 8px; padding: 16px 18px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    border: 2px solid #2c2c2c;
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-weight: 600; line-height: 1;
+    position: relative;
+  }
+  .logo-icon .num { font-size: 8px; position: absolute; top: 2px; right: 3px; }
+  .logo-icon .sym { font-size: 14px; }
+  .logo-text { line-height: 1.2; }
+  .logo-text .cn { font-size: 16px; font-weight: 600; }
+  .logo-text .en { font-size: 11px; color: #6b7280; }
+
+  .nav { padding: 8px 10px; flex: 1; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 6px;
+    cursor: pointer; color: #1f2329; font-size: 14px;
+  }
+  .nav-item:hover { background: #e6e1ee; }
+  .nav-item .icon { width: 16px; height: 16px; opacity: 0.85; flex-shrink: 0; }
+  .sidebar svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-item .arrow { margin-left: auto; font-size: 10px; color: #8a8f99; }
+  .nav-section { margin-top: 4px; }
+  .sub-list { padding-left: 20px; margin-top: 2px; }
+  .sub-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; color: #4a4f59; font-size: 13px;
+  }
+  .sub-item:hover { background: #e6e1ee; }
+  .history-list { padding-left: 20px; }
+  .history-item {
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; color: #4a4f59; font-size: 13px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-item:hover { background: #e6e1ee; }
+
+  .sidebar-footer { border-top: 1px solid #e3dff0; padding: 12px; }
+  .invite-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 6px;
+    background: #e6e1ee; font-size: 13px;
+    cursor: pointer; margin-bottom: 10px;
+  }
+  .plan { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 6px; }
+  .plan .upgrade {
+    margin-left: auto; font-size: 12px; color: #6b7280;
+    background: #fff; padding: 2px 8px; border-radius: 10px;
+    border: 1px solid #e5e7eb; cursor: pointer;
+  }
+  .quota { display: flex; align-items: center; gap: 14px; font-size: 12px; color: #4a4f59; }
+  .quota span { display: inline-flex; align-items: center; gap: 4px; }
+
+  .bottom-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid #e3dff0;
+    font-size: 13px; color: #4a4f59;
+  }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #c4b5fd, #818cf8); }
+
+  .collapse-handle {
+    position: absolute; right: -12px; top: 50%;
+    transform: translateY(-50%);
+    width: 22px; height: 36px;
+    background: #fff; border: 1px solid #e3dff0; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #8a8f99; z-index: 5;
+  }
+
+  /* ============ 主内容区 ============ */
+  .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .topbar {
+    background: #fff; padding: 16px 32px;
+    border-bottom: 1px solid #ece8f5;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    color: #4a4f59; font-size: 14px;
+    padding: 6px 8px; border-radius: 6px;
+  }
+  .back-btn:hover { background: #f5f3fa; color: #6366f1; }
+  .search-info { font-size: 14px; color: #1f2329; }
+  .search-info .keyword {
+    color: #6366f1; font-weight: 500;
+    font-family: "SF Mono", "Consolas", monospace;
+    font-size: 13px;
+  }
+  .edit-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    color: #6366f1; font-size: 13px;
+    padding: 4px 8px; border-radius: 6px;
+  }
+  .edit-btn:hover { background: #ede9ff; }
+
+  .obj-tabs {
+    background: #fff;
+    padding: 14px 32px 0;
+    border-bottom: 1px solid #ece8f5;
+    display: flex; gap: 8px;
+  }
+  .obj-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px; cursor: pointer;
+    color: #6b7280; font-size: 14px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .obj-tab.active { color: #6366f1; font-weight: 500; border-bottom-color: #6366f1; }
+  .obj-tab .count { color: inherit; font-variant-numeric: tabular-nums; }
+
+  /* ============ 内容两栏 ============ */
+  .content {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0; padding: 0;
+    flex: 1; background: #fff;
+  }
+
+  /* ============ 筛选面板 ============ */
+  .filter-panel {
+    background: #fff;
+    padding: 22px 22px 22px 32px;
+    height: fit-content;
+    border-right: 1px solid #ece8f5;
+    position: sticky;
+    top: 105px;
+  }
+  .filter-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .filter-head .title { font-size: 15px; font-weight: 600; color: #1f2329; }
+  .reset-btn {
+    background: none; border: none; cursor: pointer;
+    color: #6b7280; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .reset-btn:hover { color: #6366f1; }
+
+  .applied { margin: 14px 0; padding-bottom: 14px; border-bottom: 1px solid #f0eef5; }
+  .applied-label { font-size: 12px; color: #9ca3af; margin-bottom: 8px; }
+  .applied-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .applied-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; background: #ede9ff;
+    color: #6366f1; border-radius: 4px; font-size: 12px;
+  }
+  .applied-tag .x { cursor: pointer; color: #818cf8; }
+  .applied-tag .x:hover { color: #4f46e5; }
+
+  .filter-group { border-bottom: 1px solid #f0eef5; padding: 14px 0; }
+  .filter-group:last-child { border-bottom: none; }
+  .group-head {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; font-size: 14px; font-weight: 500;
+    color: #1f2329; margin-bottom: 10px;
+  }
+  .group-head .caret { color: #9ca3af; transition: transform 0.2s; }
+  .filter-group.collapsed .group-head .caret { transform: rotate(-90deg); }
+  .filter-group.collapsed .group-body { display: none; }
+
+  .checkbox-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 2px; cursor: pointer;
+    font-size: 13px; color: #4a4f59;
+  }
+  .checkbox-row:hover { color: #1f2329; }
+  .checkbox-row input { accent-color: #6366f1; }
+  .checkbox-row .label-text { flex: 1; }
+  .checkbox-row .count {
+    color: #9ca3af; font-size: 12px; font-variant-numeric: tabular-nums;
+  }
+
+  .show-more {
+    margin-top: 6px;
+    color: #6366f1;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 2px;
+  }
+  .show-more:hover { text-decoration: underline; }
+
+  /* ============ 结果区 ============ */
+  .results { background: #fff; min-width: 0; padding: 22px 32px 60px; }
+  .result-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; padding: 0 4px;
+  }
+  .result-count { font-size: 13px; color: #4a4f59; }
+  .result-count b { color: #6366f1; font-weight: 600; }
+
+  /* ============ 数据表 ============ */
+  .table-wrap {
+    border: 1px solid #ece8f5;
+    border-radius: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #fff;
+  }
+  .table-wrap::-webkit-scrollbar { height: 10px; }
+  .table-wrap::-webkit-scrollbar-track { background: #fafaff; border-radius: 0 0 10px 10px; }
+  .table-wrap::-webkit-scrollbar-thumb { background: #d8d4e6; border-radius: 5px; }
+  .table-wrap::-webkit-scrollbar-thumb:hover { background: #b8b2d0; }
+
+  .qchem-table {
+    min-width: 1200px;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    color: #1f2329;
+    table-layout: fixed;
+  }
+  .qchem-table thead th {
+    background: #fafaff;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-align: left;
+    padding: 14px 14px;
+    border-bottom: 1px solid #ece8f5;
+    white-space: nowrap;
+    position: relative;
+  }
+  .qchem-table thead th .th-hint {
+    display: inline-flex; align-items: center;
+    margin-left: 4px;
+    color: #c4c8d2;
+    cursor: help;
+    vertical-align: middle;
+  }
+  .qchem-table thead th .th-hint:hover { color: #6366f1; }
+
+  /* 列宽 */
+  .col-mol       { width: 160px; }
+  .col-homo      { width: 130px; }
+  .col-lumo      { width: 130px; }
+  .col-charge    { width: 130px; }
+  .col-spin      { width: 110px; }
+  .col-hardness  { width: 130px; }
+  .col-electro   { width: 150px; }
+
+  .qchem-table tbody td {
+    padding: 18px 14px;
+    border-bottom: 1px solid #f0eef5;
+    vertical-align: middle;
+    color: #4a4f59;
+    line-height: 1.55;
+    word-break: break-word;
+  }
+  .qchem-table tbody tr:last-child td { border-bottom: none; }
+  .qchem-table tbody tr:hover { background: #fbfaff; }
+
+  /* 分子结构容器 */
+  .mol-thumb {
+    width: 120px; height: 96px;
+    border: 1px solid #f0eef5;
+    border-radius: 6px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .mol-thumb svg { width: 100%; height: 100%; }
+
+  /* 数值列 */
+  .cell-num {
+    font-variant-numeric: tabular-nums;
+    color: #1f2329;
+    text-align: right;
+    padding-right: 16px !important;
+  }
+  .qchem-table thead th.col-homo,
+  .qchem-table thead th.col-lumo,
+  .qchem-table thead th.col-charge,
+  .qchem-table thead th.col-spin,
+  .qchem-table thead th.col-hardness,
+  .qchem-table thead th.col-electro {
+    text-align: right;
+    padding-right: 16px;
+  }
+
+  /* 分页 */
+  .pagination {
+    margin-top: 24px;
+    display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+    flex-wrap: wrap;
+  }
+  .page-btn {
+    min-width: 32px; height: 32px;
+    padding: 0 10px;
+    border: 1px solid #ece8f5; background: #fff;
+    border-radius: 6px; cursor: pointer;
+    color: #4a4f59; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .page-btn:hover:not(.active):not(:disabled):not(.ellipsis) {
+    border-color: #c7d2fe; color: #6366f1;
+  }
+  .page-btn.active {
+    background: #1f2329; border-color: #1f2329; color: #fff;
+  }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .page-btn.ellipsis {
+    border: none; background: transparent;
+    color: #9ca3af; cursor: default;
+    min-width: 22px; padding: 0;
+  }
+  .page-size {
+    margin-left: 8px;
+    position: relative;
+  }
+  .page-size select {
+    appearance: none; -webkit-appearance: none;
+    border: 1px solid #ece8f5; background: #fff;
+    color: #4a4f59; font-size: 13px;
+    height: 32px; padding: 0 30px 0 12px;
+    border-radius: 6px; cursor: pointer; outline: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+  .page-size select:hover { border-color: #c7d2fe; }
+  .page-jump {
+    margin-left: 8px;
+    display: inline-flex; align-items: center; gap: 6px;
+    color: #4a4f59; font-size: 13px;
+  }
+  .page-jump input {
+    width: 48px; height: 32px;
+    padding: 0 8px;
+    border: 1px solid #ece8f5; border-radius: 6px;
+    outline: none; font-size: 13px;
+    font-variant-numeric: tabular-nums; text-align: center;
+    color: #1f2329;
+  }
+  .page-jump input:focus { border-color: #c7d2fe; }
+
+  /* ============ 编辑检索面板 ============ */
+  .edit-overlay {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 220px;
+    z-index: 100; display: none;
+    flex-direction: column;
+  }
+  .edit-overlay.show { display: flex; }
+  .edit-panel {
+    background: #fff;
+    padding: 18px 32px;
+    border-bottom: 1px solid #ece8f5;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .edit-back {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    color: #4a4f59; font-size: 14px;
+    padding: 6px 8px; border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .edit-back:hover { background: #f5f3fa; color: #6366f1; }
+  .edit-input-wrap {
+    flex: 1; display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid #d8d4e6;
+    border-radius: 10px; padding: 9px 14px;
+    transition: all 0.2s;
+  }
+  .edit-input-wrap:focus-within {
+    border-color: #c7d2fe;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.12);
+  }
+  .edit-input-wrap input {
+    flex: 1; border: none; background: transparent;
+    outline: none; font-size: 14px; color: #1f2329;
+    font-family: "SF Mono", "Consolas", monospace;
+  }
+  .edit-input-clear {
+    background: #d1d5db; border: none; cursor: pointer;
+    color: #fff; width: 18px; height: 18px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .edit-input-clear:hover { background: #9ca3af; }
+  .edit-submit {
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; font-size: 14px;
+    padding: 9px 22px; border-radius: 8px;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .edit-submit:hover { box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
+  .edit-backdrop { flex: 1; background: rgba(15, 18, 30, 0.45); cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ 左侧 Bohrium 导航 ============ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">
+        <span class="num">107</span>
+        <span class="sym">Bh</span>
+      </div>
+      <div class="logo-text">
+        <div class="cn">玻尔</div>
+        <div class="en">Bohrium</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        新对话
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        站内搜索
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          科学导航
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sub-list">
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>订阅</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>期刊库</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>学者</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>科学百科</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>知识库</div>
+        </div>
+      </div>
+
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        实践
+        <span class="arrow">▸</span>
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.5L4 17h16l-6-7.5V2"/><path d="M8 2h8"/></svg>
+        跃迁实验室
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        智算
+        <span class="arrow">▸</span>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          历史对话
+          <span class="arrow">▾</span>
+        </div>
+        <div class="history-list">
+          <div class="history-item">告诉我最近在生…</div>
+          <div class="history-item">告诉我最近在生…</div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="invite-btn">
+        <span>🎁 邀搭子得体验会员</span>
+        <span>→</span>
+      </div>
+      <div class="plan">
+        Basic
+        <span class="upgrade">去升级</span>
+      </div>
+      <div class="quota">
+        <span>✦ 200</span>
+        <span>💬 60次</span>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="avatar"></div>
+      <span>🌐 CN ▾</span>
+      <span>🔔</span>
+      <span>?</span>
+    </div>
+
+    <div class="collapse-handle">‹</div>
+  </aside>
+
+  <!-- ============ 主内容区 ============ -->
+  <div class="main-area">
+
+    <!-- 顶部检索信息条 -->
+    <header class="topbar">
+      <button class="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        返回
+      </button>
+      <div class="search-info">检索 "<span class="keyword">C1=CC=CC=C1</span>"</div>
+      <button class="edit-btn" id="editBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        编辑
+      </button>
+    </header>
+
+    <!-- 对象 Tab 行 -->
+    <div class="obj-tabs">
+      <div class="obj-tab active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12 8 8"/><circle cx="12" cy="12" r="2"/></svg>
+        量子计算数据 <span class="count">15</span>
+      </div>
+    </div>
+
+    <!-- 内容：左筛选 + 右结果 -->
+    <div class="content">
+
+      <!-- 筛选面板 -->
+      <aside class="filter-panel">
+        <div class="filter-head">
+          <span class="title">筛选</span>
+          <button class="reset-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            重置
+          </button>
+        </div>
+
+        <div class="applied">
+          <div class="applied-label">已应用筛选</div>
+          <div class="applied-tags">
+            <span class="applied-tag">SMILES: C1=CC=CC=C1 <span class="x">×</span></span>
+          </div>
+        </div>
+
+        <!-- 分子总电荷 -->
+        <div class="filter-group">
+          <div class="group-head">分子总电荷（+e） <span class="caret">▾</span></div>
+          <div class="group-body" data-more-group="charge">
+            <label class="checkbox-row"><input type="checkbox" value="-2" /><span class="label-text">-2</span><span class="count">1</span></label>
+            <label class="checkbox-row"><input type="checkbox" value="-1" /><span class="label-text">-1</span><span class="count">3</span></label>
+            <label class="checkbox-row"><input type="checkbox" value="0" /><span class="label-text">0</span><span class="count">8</span></label>
+            <label class="checkbox-row"><input type="checkbox" value="1" /><span class="label-text">+1</span><span class="count">2</span></label>
+            <label class="checkbox-row"><input type="checkbox" value="2" /><span class="label-text">+2</span><span class="count">1</span></label>
+            <label class="checkbox-row more-item" style="display:none"><input type="checkbox" value="3" /><span class="label-text">+3</span><span class="count">0</span></label>
+            <label class="checkbox-row more-item" style="display:none"><input type="checkbox" value="-3" /><span class="label-text">-3</span><span class="count">0</span></label>
+            <div class="show-more" data-more-btn="charge">展开更多 ▾</div>
+          </div>
+        </div>
+
+        <!-- 自旋多重度 -->
+        <div class="filter-group">
+          <div class="group-head">自旋多重度 <span class="caret">▾</span></div>
+          <div class="group-body">
+            <label class="checkbox-row"><input type="checkbox" value="1" /><span class="label-text">1（单重态）</span><span class="count">8</span></label>
+            <label class="checkbox-row"><input type="checkbox" value="2" /><span class="label-text">2（二重态）</span><span class="count">5</span></label>
+            <label class="checkbox-row"><input type="checkbox" value="3" /><span class="label-text">3（三重态）</span><span class="count">2</span></label>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右侧结果 -->
+      <main class="results">
+        <div class="result-head">
+          <div class="result-count">搜索到 <b>15</b> 条量子计算记录</div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="qchem-table">
+            <thead>
+              <tr>
+                <th class="col-mol">分子结构式</th>
+                <th class="col-homo">
+                  HOMO 能级(eV)
+                  <span class="th-hint" title="最高占据分子轨道能级">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>
+                  </span>
+                </th>
+                <th class="col-lumo">
+                  LUMO 能级(eV)
+                  <span class="th-hint" title="最低未占据分子轨道能级">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>
+                  </span>
+                </th>
+                <th class="col-charge">分子总电荷（+e）</th>
+                <th class="col-spin">自旋多重度</th>
+                <th class="col-hardness">
+                  化学硬度（eV）
+                  <span class="th-hint" title="η = (ELUMO - EHOMO)/2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>
+                  </span>
+                </th>
+                <th class="col-electro">
+                  亲电性指数 (eV)
+                  <span class="th-hint" title="ω = μ²/(2η)，其中 μ 为化学势">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <!-- 行 1 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="80,20 60,50 80,80 100,50" />
+                      <circle cx="80" cy="20" r="3" fill="#1f2329" stroke="none"/>
+                      <circle cx="60" cy="50" r="3" fill="#1f2329" stroke="none"/>
+                      <circle cx="80" cy="80" r="3" fill="#1f2329" stroke="none"/>
+                      <circle cx="100" cy="50" r="3" fill="#1f2329" stroke="none"/>
+                    </svg>
+                  </div>
+                </td>
+                <td class="cell-num">-6.82</td>
+                <td class="cell-num">-1.45</td>
+                <td class="cell-num">0</td>
+                <td class="cell-num">1</td>
+                <td class="cell-num">2.69</td>
+                <td class="cell-num">2.84</td>
+              </tr>
+
+              <!-- 行 2 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="40,38 20,60 40,82 80,82 100,60 80,38" />
+                      <polygon points="80,38 100,60 80,82 120,82 140,60 120,38" />
+                    </svg>
+                  </div>
+                </td>
+                <td class="cell-num">-7.15</td>
+                <td class="cell-num">-0.98</td>
+                <td class="cell-num">0</td>
+                <td class="cell-num">1</td>
+                <td class="cell-num">3.09</td>
+                <td class="cell-num">2.63</td>
+              </tr>
+
+              <!-- 行 3 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="40,38 20,60 40,82 80,82 100,60 80,38" />
+                    </svg>
+                  </div>
+                </td>
+                <td class="cell-num">-9.34</td>
+                <td class="cell-num">-2.67</td>
+                <td class="cell-num">-1</td>
+                <td class="cell-num">2</td>
+                <td class="cell-num">3.34</td>
+                <td class="cell-num">5.41</td>
+              </tr>
+
+              <!-- 行 4 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="60,30 40,60 60,90 100,90 120,60 100,30" />
+                    </svg>
+                  </div>
+                </td>
+                <td class="cell-num">-5.21</td>
+                <td class="cell-num">-0.54</td>
+                <td class="cell-num">+1</td>
+                <td class="cell-num">2</td>
+                <td class="cell-num">2.34</td>
+                <td class="cell-num">1.77</td>
+              </tr>
+
+              <!-- 行 5 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="80,20 60,50 80,80 100,50" />
+                      <circle cx="60" cy="50" r="12" fill="none" stroke="#1f2329" stroke-width="1.2" stroke-dasharray="2,2" />
+                    </svg>
+                  </div>
+                </td>
+                <td class="cell-num">-8.47</td>
+                <td class="cell-num">-3.12</td>
+                <td class="cell-num">-2</td>
+                <td class="cell-num">3</td>
+                <td class="cell-num">2.68</td>
+                <td class="cell-num">6.28</td>
+              </tr>
+
+              <!-- 行 6 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="50,25 25,55 50,85 90,85 115,55 90,25" />
+                      <line x1="50" y1="25" x2="90" y2="25" stroke="#1f2329" stroke-width="1.4" />
+                    </svg>
+                  </div>
+                </td>
+                <td class="cell-num">-6.53</td>
+                <td class="cell-num">-1.12</td>
+                <td class="cell-num">0</td>
+                <td class="cell-num">1</td>
+                <td class="cell-num">2.71</td>
+                <td class="cell-num">2.56</td>
+              </tr>
+
+              <!-- 行 7 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="60,30 40,60 60,90 100,90 120,60 100,30" />
+                      <line x1="60" y1="30" x2="100" y2="30" stroke="#1f2329" stroke-width="1.4" />
+                    </svg>
+                  </div>
+                </td>
+                <td class="cell-num">-7.98</td>
+                <td class="cell-num">-2.34</td>
+                <td class="cell-num">0</td>
+                <td class="cell-num">1</td>
+                <td class="cell-num">2.82</td>
+                <td class="cell-num">3.77</td>
+              </tr>
+
+              <!-- 行 8 -->
+              <tr>
+                <td>
+                  <div class="mol-thumb">
+                    <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="80,20 60,50 80,80 100,50" />
+                      <text x="77" y="24" font-size="8" fill="#1f2329" stroke="none" font-family="serif">O</text>
+                    </svg>
+                  </div>
+                </td>
+                <td class="cell-num">-10.25</td>
+                <td class="cell-num">-3.78</td>
+                <td class="cell-num">-1</td>
+                <td class="cell-num">2</td>
+                <td class="cell-num">3.24</td>
+                <td class="cell-num">7.61</td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination">
+          <button class="page-btn" title="上一页" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <div class="page-size">
+            <select id="pageSizeSelect">
+              <option value="10" selected>10 条/页</option>
+              <option value="20">20 条/页</option>
+              <option value="50">50 条/页</option>
+              <option value="100">100 条/页</option>
+            </select>
+          </div>
+          <div class="page-jump">
+            跳至
+            <input type="number" min="1" value="1" id="pageJumpInput" />
+            页
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 编辑检索面板 ============ -->
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-panel">
+    <button class="edit-back" id="editClose">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      返回
+    </button>
+    <div class="edit-input-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="editInput" type="text" value="C1=CC=CC=C1" placeholder="输入分子骨架 SMILES 按回车检索…" />
+      <button class="edit-input-clear" id="editClear" title="清空">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <button class="edit-submit" id="editSubmit">搜索</button>
+  </div>
+  <div class="edit-backdrop" id="editBackdrop"></div>
+</div>
+
+<script>
+  // 折叠筛选组
+  document.querySelectorAll('.group-head').forEach(h => {
+    h.onclick = () => h.parentElement.classList.toggle('collapsed');
+  });
+
+  // 已应用筛选标签删除
+  document.querySelectorAll('.applied-tag .x').forEach(x => {
+    x.onclick = (e) => {
+      e.stopPropagation();
+      x.parentElement.remove();
+    };
+  });
+
+  // 编辑检索弹层
+  const editBtn = document.getElementById('editBtn');
+  const editOverlay = document.getElementById('editOverlay');
+  const editClose = document.getElementById('editClose');
+  const editBackdrop = document.getElementById('editBackdrop');
+  const editInput = document.getElementById('editInput');
+  const editSubmit = document.getElementById('editSubmit');
+
+  function openEdit() {
+    editOverlay.classList.add('show');
+    setTimeout(() => { editInput.focus(); editInput.select(); }, 0);
+  }
+  function closeEdit() { editOverlay.classList.remove('show'); }
+
+  editBtn.addEventListener('click', openEdit);
+  editClose.addEventListener('click', closeEdit);
+  editBackdrop.addEventListener('click', closeEdit);
+  editSubmit.addEventListener('click', () => {
+    const value = editInput.value.trim();
+    if (value) {
+      closeEdit();
+      // 实际检索逻辑可在此扩展
+    }
+  });
+  document.getElementById('editClear').addEventListener('click', () => {
+    editInput.value = '';
+    editInput.focus();
+  });
+  // 回车检索
+  editInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      editSubmit.click();
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && editOverlay.classList.contains('show')) closeEdit();
+  });
+
+  // 展开更多 / 收起
+  document.querySelectorAll('[data-more-btn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const group = btn.dataset.moreBtn;
+      const items = document.querySelectorAll(`[data-more-group="${group}"] .more-item`);
+      const isExpanded = btn.textContent.includes('收起');
+      items.forEach(item => { item.style.display = isExpanded ? 'none' : ''; });
+      btn.textContent = isExpanded ? '展开更多 ▾' : '收起 ▲';
+    });
+  });
+
+  // 分页跳转
+  document.getElementById('pageJumpInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const val = parseInt(e.target.value, 10);
+      if (val > 0) {
+        // 跳转逻辑可在此扩展
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

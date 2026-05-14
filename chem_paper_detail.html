@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>论文详情 - 玻尔</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f8f9fc;
+    color: #1f2329;
+    font-size: 14px;
+  }
+
+  /* ============ 整体布局 ============ */
+  .app { display: flex; min-height: 100vh; }
+
+  /* ============ 左侧导航栏 (Bohrium) ============ */
+  .sidebar {
+    width: 220px;
+    background: #f0edf5;
+    border-right: 1px solid #e3dff0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .logo { display: flex; align-items: center; gap: 8px; padding: 16px 18px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    border: 2px solid #2c2c2c;
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-weight: 600; line-height: 1;
+    position: relative;
+  }
+  .logo-icon .num { font-size: 8px; position: absolute; top: 2px; right: 3px; }
+  .logo-icon .sym { font-size: 14px; }
+  .logo-text { line-height: 1.2; }
+  .logo-text .cn { font-size: 16px; font-weight: 600; }
+  .logo-text .en { font-size: 11px; color: #6b7280; }
+
+  .nav { padding: 8px 10px; flex: 1; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 6px;
+    cursor: pointer; color: #1f2329; font-size: 14px;
+  }
+  .nav-item:hover { background: #e6e1ee; }
+  .nav-item .icon { width: 16px; height: 16px; opacity: 0.85; flex-shrink: 0; }
+  .sidebar svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-item .arrow { margin-left: auto; font-size: 10px; color: #8a8f99; }
+  .nav-section { margin-top: 4px; }
+  .sub-list { padding-left: 20px; margin-top: 2px; }
+  .sub-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; color: #4a4f59; font-size: 13px;
+  }
+  .sub-item:hover { background: #e6e1ee; }
+  .history-list { padding-left: 20px; }
+  .history-item {
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; color: #4a4f59; font-size: 13px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-item:hover { background: #e6e1ee; }
+
+  .sidebar-footer { border-top: 1px solid #e3dff0; padding: 12px; }
+  .invite-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 6px;
+    background: #e6e1ee; font-size: 13px;
+    cursor: pointer; margin-bottom: 10px;
+  }
+  .plan { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 6px; }
+  .plan .upgrade {
+    margin-left: auto; font-size: 12px; color: #6b7280;
+    background: #fff; padding: 2px 8px; border-radius: 10px;
+    border: 1px solid #e5e7eb; cursor: pointer;
+  }
+  .quota { display: flex; align-items: center; gap: 14px; font-size: 12px; color: #4a4f59; }
+
+  .bottom-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid #e3dff0;
+    font-size: 13px; color: #4a4f59;
+  }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #c4b5fd, #818cf8); }
+
+  .collapse-handle {
+    position: absolute; right: -12px; top: 50%;
+    transform: translateY(-50%);
+    width: 22px; height: 36px;
+    background: #fff; border: 1px solid #e3dff0; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #8a8f99; z-index: 5;
+  }
+
+  /* ============ 主内容区 ============ */
+  .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  /* ============ 顶部栏 ============ */
+  .topbar {
+    background: #fff;
+    padding: 0 24px;
+    border-bottom: 1px solid #e5e5e7;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: 52px;
+  }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    color: #1f2329; font-size: 14px;
+    padding: 6px 8px; border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .back-btn:hover { background: #f5f5f7; }
+  .topbar-tabs {
+    display: flex; align-items: center; gap: 0;
+    height: 100%;
+    margin-left: 24px;
+  }
+  .topbar-tab {
+    display: inline-flex; align-items: center;
+    padding: 0 16px;
+    height: 100%;
+    font-size: 14px;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    position: relative;
+    text-decoration: none;
+    gap: 6px;
+  }
+  .topbar-tab:hover { color: #1f2329; background: #f9fafb; }
+  .topbar-tab.active {
+    color: #6366f1;
+    border-bottom-color: #6366f1;
+    font-weight: 500;
+  }
+  .topbar-tab .badge {
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 400;
+  }
+
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #6b7280;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid #e5e7eb;
+  }
+  .topbar-btn:hover { background: #f5f5f7; border-color: #d1d5db; }
+
+  /* ============ 两列内容布局 ============ */
+  .page-body {
+    display: flex;
+    flex: 1;
+  }
+
+  /* ============ 左侧列：期刊+相关文献 ============ */
+  .left-col {
+    width: 320px;
+    flex-shrink: 0;
+    padding: 20px 16px 20px 24px;
+    border-right: 1px solid #e5e5e7;
+    background: #fff;
+    overflow-y: auto;
+    position: sticky;
+    top: 52px;
+    height: calc(100vh - 52px);
+  }
+
+  .left-col::-webkit-scrollbar { width: 4px; }
+  .left-col::-webkit-scrollbar-track { background: transparent; }
+  .left-col::-webkit-scrollbar-thumb { background: #d8d4e6; border-radius: 2px; }
+
+  /* 期刊信息卡片 */
+  .journal-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 20px;
+    background: #fff;
+  }
+  .journal-card .j-header {
+    display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .journal-card .j-icon {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    background: #f0edf5;
+    display: flex;
+    align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600;
+    color: #6366f1;
+    flex-shrink: 0;
+  }
+  .journal-card .j-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2329;
+    line-height: 1.4;
+    margin-bottom: 4px;
+  }
+  .journal-card .j-if {
+    font-size: 13px;
+    color: #6b7280;
+  }
+  .journal-card .j-if strong { color: #1f2329; }
+
+  .journal-card .j-stats {
+    display: flex;
+    gap: 24px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #6b7280;
+  }
+  .journal-card .j-stat { display: flex; align-items: center; gap: 4px; }
+  .journal-card .j-stat .num { color: #1f2329; font-weight: 500; }
+
+  .journal-card .j-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .journal-card .j-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+  .journal-card .j-tag.sci { background: #ede9ff; color: #6366f1; }
+  .journal-card .j-tag.oa { background: #e6fff0; color: #16a34a; }
+
+  .journal-card .j-metrics {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #9ca3af;
+  }
+
+  /* 相关文献 */
+  .related-lit-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2329;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e5e7;
+  }
+
+  .lit-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .lit-item:hover { background: #f9fafb; margin: 0 -8px; padding: 10px 8px; border-radius: 6px; }
+  .lit-item:last-child { border-bottom: none; }
+
+  .lit-item .lit-title {
+    font-size: 13px;
+    color: #1f2329;
+    line-height: 1.5;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .lit-item .lit-title:hover { color: #6366f1; }
+  .lit-item .lit-authors {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 2px;
+  }
+  .lit-item .lit-meta {
+    font-size: 12px;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lit-item .lit-meta .source { color: #6366f1; }
+
+  /* ============ 右侧列：论文详情 ============ */
+  .right-col {
+    flex: 1;
+    padding: 24px 32px 40px;
+    max-width: 900px;
+    background: #fff;
+  }
+
+  /* 面包屑 */
+  .breadcrumb {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .breadcrumb a { color: #6366f1; text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #d1d5db; }
+
+  /* 论文标题区 */
+  .paper-header { margin-bottom: 20px; }
+
+  .paper-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1f2329;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .paper-title-cn {
+    font-size: 15px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .paper-authors {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #1f2329;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .paper-authors .author-name { color: #4a4f59; }
+  .paper-authors .author-sep { color: #d1d5db; }
+  .paper-authors .author-more {
+    color: #6366f1;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .paper-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .paper-meta .journal-link {
+    color: #6366f1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .paper-meta .journal-link:hover { text-decoration: underline; }
+  .paper-meta .if-badge { color: #9ca3af; }
+  .paper-meta .stat-item { display: inline-flex; align-items: center; gap: 4px; }
+  .paper-meta .oa-badge {
+    color: #16a34a;
+    font-weight: 500;
+    font-size: 12px;
+    background: #e6fff0;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  /* 操作按钮 */
+  .paper-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #6b7280;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+  }
+  .action-btn:hover { background: #f5f5f7; border-color: #d1d5db; }
+  .action-btn .count { font-weight: 500; color: #1f2329; }
+  .action-btn.fav { color: #6366f1; border-color: #c7d2fe; background: #f5f3ff; }
+  .action-btn.fav:hover { background: #ede9ff; }
+
+  .action-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+  /* 关键词标签 */
+  .keyword-section {
+    margin-bottom: 24px;
+  }
+  .keyword-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: #6366f1;
+    background: #f5f3ff;
+    border: 1px solid #e3dff0;
+    margin: 0 8px 8px 0;
+    cursor: pointer;
+  }
+  .keyword-tag:hover { background: #ede9ff; border-color: #c7d2fe; }
+
+  /* 摘要 */
+  .abstract-section { margin-bottom: 28px; }
+
+  .abstract-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0;
+  }
+  .abstract-tab {
+    display: inline-flex; align-items: center;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .abstract-tab:hover { color: #1f2329; }
+  .abstract-tab.active {
+    color: #6366f1;
+    border-bottom-color: #6366f1;
+    font-weight: 500;
+  }
+
+  .abstract-card {
+    border: 1px solid #ece8f5;
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .abstract-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0edf5;
+  }
+  .abstract-header .title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2329;
+  }
+  .abstract-header .translate-btns {
+    display: flex;
+    gap: 4px;
+  }
+  .abstract-header .translate-btn {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #6b7280;
+  }
+  .abstract-header .translate-btn.active {
+    background: #f0edf5;
+    border-color: #d8d4e6;
+    color: #1f2329;
+  }
+  .abstract-header .translate-btn:hover {
+    border-color: #c7d2fe;
+  }
+
+  .abstract-body {
+    padding: 16px 20px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #4a4f59;
+  }
+  .abstract-body p { margin-bottom: 12px; }
+  .abstract-body p:last-child { margin-bottom: 0; }
+  .abstract-body .label { color: #1f2329; font-weight: 600; }
+
+  /* 关联物质 — 新版风格 */
+  .substance-section { margin-bottom: 28px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .section-header .icon { font-size: 18px; }
+  .section-header .title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2329;
+  }
+  .section-header .badge {
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 400;
+  }
+
+  .substance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .substance-card {
+    background: #fff;
+    border: 1px solid #ece8f5;
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .substance-card:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.10);
+    transform: translateY(-2px);
+  }
+  .substance-card .s-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .substance-card .s-index { color: #c4c8d2; font-size: 13px; font-weight: 500; }
+  .substance-card .s-cas { color: #6366f1; font-weight: 500; font-size: 13px; }
+  .substance-card .s-mol {
+    height: 130px;
+    background: #fff;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1f2329;
+  }
+  .substance-card .s-mol svg { max-width: 100%; max-height: 100%; }
+  .substance-card .s-formula { font-size: 13px; color: #4a4f59; }
+  .substance-card .s-formula .label { color: #9ca3af; }
+  .substance-card .s-formula sub { font-size: 0.78em; }
+  .substance-card .s-name {
+    font-size: 13px;
+    color: #1f2329;
+    line-height: 1.3;
+    word-break: break-word;
+    min-height: 34px;
+  }
+  .substance-card .s-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .substance-card .s-stat {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 8px;
+    background: #fff;
+    border: 1px solid #ece8f5;
+    border-radius: 6px;
+    color: #4a4f59;
+    font-size: 13px;
+  }
+  .substance-card .s-stat svg { color: #8b5cf6; }
+
+  /* NMR 区域（可展开）— 与物质标题栏统一风格 */
+  .nmr-section { margin-bottom: 28px; }
+
+  .nmr-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2329;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 12px;
+  }
+  .nmr-toggle-btn:hover { color: #6366f1; }
+  .nmr-toggle-btn .arrow {
+    margin-left: auto;
+    font-size: 10px;
+    color: #9ca3af;
+    transition: transform 0.2s;
+  }
+  .nmr-toggle-btn.expanded .arrow { transform: rotate(180deg); }
+  .nmr-toggle-btn .count-badge {
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 400;
+  }
+
+  .nmr-content { display: none; margin-top: 12px; }
+  .nmr-content.show { display: block; }
+
+  .nmr-table-wrap {
+    border: 1px solid #e5e5e7;
+    border-radius: 8px;
+    overflow-y: auto;
+    max-height: 210px;
+    background: #fff;
+  }
+  .nmr-table-wrap::-webkit-scrollbar { width: 6px; }
+  .nmr-table-wrap::-webkit-scrollbar-track { background: #f5f5f7; border-radius: 0 0 8px 0; }
+  .nmr-table-wrap::-webkit-scrollbar-thumb { background: #d8d4e6; border-radius: 3px; }
+  .nmr-table-wrap::-webkit-scrollbar-thumb:hover { background: #b8b2d0; }
+  .nmr-table-wrap::-webkit-scrollbar-button { display: none; }
+  .nmr-table-wrap { scrollbar-width: thin; scrollbar-color: #d8d4e6 #f5f5f7; }
+
+  .nmr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .nmr-table th {
+    background: #f9f9fb;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e5e7;
+    white-space: nowrap;
+  }
+  .nmr-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f0f2;
+    color: #4a4f59;
+    vertical-align: middle;
+  }
+  .nmr-table tr:last-child td { border-bottom: none; }
+  .nmr-table tr:hover { background: #fafaff; }
+
+  .nmr-mol-thumb {
+    width: 80px; height: 60px;
+    border: 1px solid #e5e5e7;
+    border-radius: 6px;
+    background: #fff;
+    display: flex;
+    align-items: center; justify-content: center;
+  }
+
+  .nmr-type { color: #1f2329; font-weight: 500; }
+  .nmr-shift {
+    max-width: 300px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .nmr-num {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: #1f2329;
+  }
+  .nmr-table th.nmr-num { text-align: right; }
+
+  .op-btn {
+    width: 30px; height: 30px;
+    border: none; background: transparent;
+    border-radius: 6px; cursor: pointer;
+    color: #6b7280;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .op-btn:hover { background: #ede9ff; color: #6366f1; }
+
+  /* 参考文献 */
+  .reference-section { margin-bottom: 28px; }
+
+  .ref-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .ref-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ref-header .title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2329;
+  }
+  .ref-header .subtitle {
+    font-size: 13px;
+    color: #9ca3af;
+    cursor: pointer;
+  }
+  .ref-header .subtitle.active { color: #6366f1; font-weight: 500; }
+  .ref-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ref-filter-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #6b7280;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+  }
+  .ref-filter-btn:hover { background: #f5f5f7; }
+
+  .ref-item {
+    padding: 14px 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .ref-item:last-child { border-bottom: none; }
+
+  .ref-item .ref-num {
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .ref-item .ref-title {
+    font-size: 14px;
+    color: #1f2329;
+    line-height: 1.5;
+    margin-bottom: 4px;
+    cursor: pointer;
+  }
+  .ref-item .ref-title:hover { color: #6366f1; }
+  .ref-item .ref-authors {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 2px;
+  }
+  .ref-item .ref-source {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+  .ref-item .ref-source .journal { color: #6366f1; }
+
+  .ref-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 0;
+    color: #6366f1;
+    cursor: pointer;
+    font-size: 13px;
+    gap: 4px;
+  }
+  .ref-more:hover { text-decoration: underline; }
+
+  /* ============ 结构预览弹窗 ============ */
+  .preview-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15, 18, 30, 0.45);
+    z-index: 200;
+    display: none;
+    align-items: center; justify-content: center;
+  }
+  .preview-overlay.show { display: flex; }
+  .preview-modal {
+    width: 540px; max-width: calc(100vw - 40px);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .preview-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0eef5;
+  }
+  .preview-title { font-size: 15px; font-weight: 600; color: #1f2329; }
+  .preview-close {
+    border: none; background: transparent; cursor: pointer;
+    color: #6b7280; padding: 4px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .preview-close:hover { background: #f5f3fa; color: #1f2329; }
+
+  .preview-canvas-wrap {
+    position: relative;
+    margin: 16px 20px;
+    background: #f4f6fa;
+    border-radius: 10px;
+    height: 360px;
+    overflow: hidden;
+  }
+  .preview-toolbar {
+    position: absolute; top: 12px; left: 16px; right: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 2;
+  }
+  .preview-legend {
+    display: inline-flex; align-items: center; gap: 14px;
+    font-size: 13px; color: #4a4f59;
+  }
+  .preview-legend .dot {
+    display: inline-block; width: 9px; height: 9px;
+    border-radius: 50%; margin-right: 5px; vertical-align: middle;
+  }
+  .preview-legend .dot.c { background: #2ecc71; }
+  .preview-legend .dot.h { background: #c4c8d2; }
+
+  .preview-mode-switch {
+    display: inline-flex;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 3px;
+  }
+  .preview-mode-switch button {
+    border: none; background: transparent; cursor: pointer;
+    padding: 5px 16px; border-radius: 999px;
+    font-size: 13px; color: #4a4f59;
+  }
+  .preview-mode-switch button.active { background: #1f2329; color: #fff; }
+
+  .preview-stage {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .preview-stage svg { max-width: 90%; max-height: 90%; }
+
+  .preview-tools {
+    position: absolute; right: 14px; bottom: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .preview-tools button {
+    width: 34px; height: 34px;
+    border: 1px solid #ece8f5;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #6b7280;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .preview-tools button:hover { color: #6366f1; border-color: #c7d2fe; }
+
+  .preview-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px 18px;
+    color: #6b7280; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .preview-nav { display: inline-flex; gap: 6px; }
+  .preview-nav button {
+    width: 28px; height: 28px;
+    border: 1px solid #ece8f5;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #6b7280;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .preview-nav button:hover:not(:disabled) { color: #6366f1; border-color: #c7d2fe; }
+  .preview-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ 左侧 Bohrium 导航栏 ============ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">
+        <span class="num">107</span>
+        <span class="sym">Bh</span>
+      </div>
+      <div class="logo-text">
+        <div class="cn">玻尔</div>
+        <div class="en">Bohrium</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        新对话
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        站内搜索
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          科学导航
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sub-list">
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>订阅</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>期刊库</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>学者</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>科学百科</div>
+          <div class="sub-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>知识库</div>
+        </div>
+      </div>
+
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        实践
+        <span class="arrow">▸</span>
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.5L4 17h16l-6-7.5V2"/><path d="M8 2h8"/></svg>
+        跃迁实验室
+      </div>
+      <div class="nav-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        智算
+        <span class="arrow">▸</span>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          历史对话
+          <span class="arrow">▾</span>
+        </div>
+        <div class="history-list">
+          <div class="history-item">告诉我最近在生…</div>
+          <div class="history-item">告诉我最近在生…</div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="invite-btn">
+        <span>🎁 邀搭子得体验会员</span>
+        <span>→</span>
+      </div>
+      <div class="plan">
+        Basic
+        <span class="upgrade">去升级</span>
+      </div>
+      <div class="quota">
+        <span>✦ 200</span>
+        <span>💬 60次</span>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="avatar"></div>
+      <span>🌐 CN ▾</span>
+      <span>🔔</span>
+      <span>?</span>
+    </div>
+
+    <div class="collapse-handle">‹</div>
+  </aside>
+
+  <!-- ============ 主内容区 ============ -->
+  <div class="main-area">
+
+    <!-- 顶部栏 -->
+    <header class="topbar">
+      <button class="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        返回
+      </button>
+      <div class="topbar-tabs">
+        <a class="topbar-tab active" href="#abstractSection" onclick="scrollToSection('abstractSection');return false;">
+          摘要
+        </a>
+        <a class="topbar-tab" href="#refSection" onclick="scrollToSection('refSection');return false;">
+          参考文献 <span class="badge">28</span>
+        </a>
+        <a class="topbar-tab" href="#" onclick="return false;">
+          施引文献 <span class="badge">0</span>
+        </a>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn">↗ 引用</button>
+        <button class="topbar-btn">⋮</button>
+      </div>
+    </header>
+
+    <!-- 两列布局页面主体 -->
+    <div class="page-body">
+
+      <!-- ============ 左侧列：期刊 + 相关文献 ============ -->
+      <aside class="left-col">
+        <!-- 期刊信息卡片 -->
+        <div class="journal-card">
+          <div class="j-header">
+            <div class="j-icon">CEH</div>
+            <div>
+              <div class="j-name">Clinical and Experimental Hypertension</div>
+              <div class="j-if">影响因子 <strong>IS 3.5</strong></div>
+            </div>
+          </div>
+          <div class="j-metrics">
+            <span>CiteScore 2.1</span>
+            <span>•</span>
+            <span>总被引 2,158</span>
+          </div>
+          <div class="j-stats">
+            <span class="j-stat">📄 年发文 <span class="num">180</span></span>
+            <span class="j-stat">⏱ 审稿周期 <span class="num">约3个月</span></span>
+          </div>
+          <div class="j-tags">
+            <span class="j-tag sci">SCI</span>
+            <span class="j-tag oa">OA</span>
+            <span class="j-tag">Q3</span>
+            <span class="j-tag">中科院4区</span>
+          </div>
+        </div>
+
+        <!-- 相关文献 -->
+        <div class="related-lit-title">相关文献</div>
+
+        <div class="lit-item">
+          <div class="lit-title">Blood Pressure and Late Pregnancy Outcomes in Women with Gestational Hypertension</div>
+          <div class="lit-authors">Smith JA, et al.</div>
+          <div class="lit-meta">
+            <span class="source">Hypertension</span>
+            <span>2025</span>
+          </div>
+        </div>
+
+        <div class="lit-item">
+          <div class="lit-title">Exploring the Role of miRNA-101a in Preeclampsia: A Systematic Review</div>
+          <div class="lit-authors">Chen LX, Wang Y, et al.</div>
+          <div class="lit-meta">
+            <span class="source">J Clin Med</span>
+            <span>2025</span>
+          </div>
+        </div>
+
+        <div class="lit-item">
+          <div class="lit-title">Low-Dose Aspirin for the Prevention of Preeclampsia: Updated Meta-Analysis of Randomized Trials</div>
+          <div class="lit-authors">Rodriguez ML, et al.</div>
+          <div class="lit-meta">
+            <span class="source">Am J Obstet Gynecol</span>
+            <span>2024</span>
+          </div>
+        </div>
+
+        <div class="lit-item">
+          <div class="lit-title">MicroRNA Biomarkers in Gestational Hypertension: A Comprehensive Profiling Study</div>
+          <div class="lit-authors">Zhang Y, Liu H, et al.</div>
+          <div class="lit-meta">
+            <span class="source">Placenta</span>
+            <span>2024</span>
+          </div>
+        </div>
+
+        <div class="lit-item">
+          <div class="lit-title">Circulating microRNAs as Diagnostic Markers in Preeclampsia: A Meta-Analysis</div>
+          <div class="lit-authors">Park SH, Kim JW, et al.</div>
+          <div class="lit-meta">
+            <span class="source">Int J Mol Sci</span>
+            <span>2023</span>
+          </div>
+        </div>
+
+        <div class="lit-item">
+          <div class="lit-title">Aspirin and the Risk of Preeclampsia: Mechanistic Insights from Molecular Pathways</div>
+          <div class="lit-authors">Anderson KL, et al.</div>
+          <div class="lit-meta">
+            <span class="source">Front Pharmacol</span>
+            <span>2023</span>
+          </div>
+        </div>
+
+        <div class="lit-item">
+          <div class="lit-title">Hypoxia-Regulated miRNAs in Pregnancy Complications: Focus on miR-210</div>
+          <div class="lit-authors">Garcia MP, et al.</div>
+          <div class="lit-meta">
+            <span class="source">Reprod Sci</span>
+            <span>2023</span>
+          </div>
+        </div>
+
+        <div class="lit-item">
+          <div class="lit-title">Epigenetic Regulation in Preeclampsia: Role of microRNAs and Long Non-Coding RNAs</div>
+          <div class="lit-authors">Li X, Zhao F, et al.</div>
+          <div class="lit-meta">
+            <span class="source">Epigenomics</span>
+            <span>2022</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ============ 右侧列：论文详情 ============ -->
+      <main class="right-col">
+
+        <!-- 面包屑 -->
+        <div class="breadcrumb">
+          <a href="#">快速检索</a>
+          <span class="sep">/</span>
+          <a href="#">microRNA-210-3p</a>
+          <span class="sep">/</span>
+          <span style="color:#1f2329;">论文详情</span>
+        </div>
+
+        <!-- 论文标题 -->
+        <div class="paper-header">
+          <div class="paper-title">Longitudinal trajectory of circulating microRNA-210-3p and its association with low-dose aspirin use in gestational hypertension and preeclampsia: a pilot study</div>
+          <div class="paper-title-cn">循环微小RNA-210-3p的纵向轨迹及其与妊娠期高血压和先兆子痫中低剂量阿司匹林使用的关联：一项初步研究</div>
+
+          <!-- 作者 -->
+          <div class="paper-authors">
+            <span class="author-name">Ming-Ju Wang</span>
+            <span class="author-sep">,</span>
+            <span class="author-name">Chie-Pein Chen</span>
+            <span class="author-sep">,</span>
+            <span class="author-name">Yi-Ning Li</span>
+            <span class="author-sep">,</span>
+            <span class="author-name">Cheng-Yu Hsieh</span>
+            <span class="author-sep">,</span>
+            <span class="author-more">+ 3 位作者</span>
+          </div>
+
+          <!-- 元数据 -->
+          <div class="paper-meta">
+            <span>📅 2026.12.31</span>
+            <span class="journal-link">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              Clinical and Experimental Hypertension
+            </span>
+            <span class="if-badge">( IS 3.5 )</span>
+            <span class="stat-item">👁 4.1K 阅读</span>
+            <span class="oa-badge">OA</span>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="paper-actions">
+            <button class="action-btn fav">⭐ 收藏</button>
+            <button class="action-btn"><span class="count">66</span> 引用</button>
+            <div class="action-right">
+              <button class="action-btn">👍 <span class="count">825</span></button>
+              <button class="action-btn">↗ 分享</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 关键词 -->
+        <div class="keyword-section">
+          <span class="keyword-tag">microRNA-210-3p</span>
+          <span class="keyword-tag">hypertensive disorders of pregnancy</span>
+          <span class="keyword-tag">aspirin</span>
+          <span class="keyword-tag">gestational hypertension</span>
+          <span class="keyword-tag">preeclampsia</span>
+          <span class="keyword-tag">biomarker</span>
+          <span class="keyword-tag">longitudinal study</span>
+        </div>
+
+        <!-- 摘要 -->
+        <div id="abstractSection" class="abstract-section">
+          <div class="abstract-tabs">
+            <span class="abstract-tab active">原文</span>
+            <span class="abstract-tab">中文</span>
+          </div>
+          <div class="abstract-card">
+            <div class="abstract-header">
+              <span class="title">摘要</span>
+              <div class="translate-btns">
+                <button class="translate-btn active">整段翻译</button>
+                <button class="translate-btn">逐句翻译</button>
+              </div>
+            </div>
+            <div class="abstract-body">
+              <p><span class="label">Background:</span> Gestational hypertension and preeclampsia are significant complications of pregnancy affecting approximately 5-10% of pregnancies worldwide. Low-dose aspirin has been recommended for prevention in high-risk women. MicroRNA-210-3p has been implicated in hypoxia and vascular dysfunction. This prospective pilot study aimed to investigate the longitudinal trajectory of circulating microRNA-210-3p and its association with aspirin use in these conditions.</p>
+              <p><span class="label">Methods:</span> A prospective pilot study was conducted involving 120 pregnant women at high risk for gestational hypertension/preeclampsia. Participants were divided into aspirin-treated (n=60) and control (n=60) groups. Blood samples were collected at three time points (12-16 weeks, 20-24 weeks, and 28-32 weeks of gestation). Circulating microRNA-210-3p levels were measured using quantitative real-time PCR. Clinical outcomes including blood pressure, proteinuria, and pregnancy complications were recorded.</p>
+              <p><span class="label">Results:</span> Circulating microRNA-210-3p levels significantly increased from 12-16 weeks to 28-32 weeks in the control group but remained stable in the aspirin-treated group. Women who developed preeclampsia showed significantly higher microRNA-210-3p levels at 20-24 weeks compared to those who remained normotensive (fold change 2.8, p &lt; 0.001). Aspirin use was associated with attenuated elevation of microRNA-210-3p (p &lt; 0.01). ROC analysis demonstrated moderate predictive value of microRNA-210-3p for preeclampsia (AUC = 0.75).</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 关联物质 — 参照 chem_substance_results.html 风格 -->
+        <div id="substanceSection" class="substance-section">
+          <div class="section-header">
+            <span class="icon">🧪</span>
+            <span class="title">物质</span>
+            <span class="badge">2 个</span>
+          </div>
+          <div class="substance-grid">
+            <div class="substance-card" onclick="openSubstancePreview(0)">
+              <div class="s-head">
+                <span class="s-index">1</span>
+                <span class="s-cas">CAS 50-78-2</span>
+              </div>
+              <div class="s-mol">
+                <svg width="160" height="110" viewBox="0 0 160 110">
+                  <g stroke="#1f2329" stroke-width="1.4" fill="none">
+                    <polygon points="60,30 90,30 105,55 90,80 60,80 45,55"/>
+                    <line x1="62" y1="33" x2="88" y2="33"/>
+                    <line x1="62" y1="77" x2="88" y2="77"/>
+                  </g>
+                  <text x="20" y="60" font-size="11" fill="#dc2626">HO</text>
+                  <line x1="32" y1="56" x2="46" y2="56" stroke="#1f2329"/>
+                  <text x="108" y="40" font-size="11" fill="#dc2626">O</text>
+                  <line x1="105" y1="55" x2="116" y2="42" stroke="#1f2329"/>
+                  <text x="118" y="78" font-size="11" fill="#dc2626">OH</text>
+                  <line x1="105" y1="55" x2="118" y2="73" stroke="#1f2329"/>
+                </svg>
+              </div>
+              <div class="s-formula"><span class="label">分子式：</span>C<sub>9</sub>H<sub>8</sub>O<sub>4</sub></div>
+              <div class="s-name">2-acetoxybenzoic acid</div>
+              <div class="s-stats">
+                <div class="s-stat">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg> 5,084
+                </div>
+                <div class="s-stat">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 38,358
+                </div>
+              </div>
+            </div>
+            <div class="substance-card" onclick="openSubstancePreview(1)">
+              <div class="s-head">
+                <span class="s-index">2</span>
+                <span class="s-cas">CAS 175033-36-0</span>
+              </div>
+              <div class="s-mol">
+                <svg width="160" height="110" viewBox="0 0 160 110">
+                  <g stroke="#1f2329" stroke-width="1.4" fill="none">
+                    <circle cx="75" cy="55" r="25"/>
+                    <line x1="50" y1="55" x2="36" y2="55"/>
+                    <line x1="36" y1="50" x2="36" y2="60"/>
+                    <line x1="100" y1="55" x2="114" y2="55"/>
+                  </g>
+                  <text x="116" y="60" font-size="11" fill="#dc2626">OH</text>
+                  <text x="22" y="60" font-size="11" fill="#dc2626">HO</text>
+                  <line x1="36" y1="55" x2="20" y2="45"/>
+                  <text x="10" y="44" font-size="11" fill="#dc2626">O</text>
+                </svg>
+              </div>
+              <div class="s-formula"><span class="label">分子式：</span>C<sub>16</sub>H<sub>13</sub>NO<sub>7</sub></div>
+              <div class="s-name" title="2-(acetyloxy)benzoic acid 3-...">2-(acetyloxy)benzoic acid 3-...</div>
+              <div class="s-stats">
+                <div class="s-stat">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg> 254
+                </div>
+                <div class="s-stat">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 91
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NMR 区域（可展开）— 与物质标题栏统一 -->
+        <div class="nmr-section">
+          <button class="nmr-toggle-btn" id="nmrToggleBtn" onclick="toggleNmr()">
+            <span>NMR 核磁共振数据</span>
+            <span class="count-badge">3 条记录</span>
+            <span class="arrow">▾</span>
+          </button>
+
+          <div class="nmr-content" id="nmrContent">
+            <div class="nmr-table-wrap">
+              <table class="nmr-table">
+                <thead>
+                  <tr>
+                    <th style="width:100px;">分子结构</th>
+                    <th>核磁类别</th>
+                    <th>频率</th>
+                    <th>溶剂</th>
+                    <th style="width:280px;">化学位移</th>
+                    <th class="nmr-num">原子总数</th>
+                    <th class="nmr-num">不同环境数</th>
+                    <th class="nmr-num">抽取峰数</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div class="nmr-mol-thumb">
+                        <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#6366f1" stroke-width="1.2">
+                          <polygon points="40,10 20,30 40,50 60,30" />
+                          <line x1="20" y1="30" x2="60" y2="30" stroke="#6366f1" stroke-width="1" stroke-dasharray="2,2"/>
+                        </svg>
+                      </div>
+                    </td>
+                    <td><span class="nmr-type">¹H NMR</span></td>
+                    <td>400 MHz</td>
+                    <td>CDCl₃</td>
+                    <td class="nmr-shift">2.35 (s, 3H), 7.12 (dd, 1H), 7.42 (dt, 1H), 7.62 (dt, 1H), 8.04 (dd, 1H)</td>
+                    <td class="nmr-num">8</td>
+                    <td class="nmr-num">5</td>
+                    <td class="nmr-num">5</td>
+                    <td>
+                      <button class="op-btn preview-trigger" title="结构预览">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="nmr-mol-thumb">
+                        <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#6366f1" stroke-width="1.2">
+                          <polygon points="40,10 20,30 40,50 60,30" />
+                          <line x1="20" y1="30" x2="60" y2="30" stroke="#6366f1" stroke-width="1" stroke-dasharray="2,2"/>
+                        </svg>
+                      </div>
+                    </td>
+                    <td><span class="nmr-type">¹³C NMR</span></td>
+                    <td>101 MHz</td>
+                    <td>CDCl₃</td>
+                    <td class="nmr-shift">21.2, 122.5, 124.3, 126.8, 129.4, 134.2, 150.8, 169.4</td>
+                    <td class="nmr-num">9</td>
+                    <td class="nmr-num">8</td>
+                    <td class="nmr-num">8</td>
+                    <td>
+                      <button class="op-btn preview-trigger" title="结构预览">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="nmr-mol-thumb">
+                        <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#6366f1" stroke-width="1.2">
+                          <polygon points="40,10 20,30 40,50 60,30" />
+                          <line x1="20" y1="30" x2="60" y2="30" stroke="#6366f1" stroke-width="1" stroke-dasharray="2,2"/>
+                        </svg>
+                      </div>
+                    </td>
+                    <td><span class="nmr-type">¹H NMR</span></td>
+                    <td>600 MHz</td>
+                    <td>DMSO-d₆</td>
+                    <td class="nmr-shift">2.28 (s, 3H), 7.05 (t, 1H), 7.32 (t, 1H), 7.52 (d, 1H), 7.85 (d, 1H), 11.2 (br s, 1H)</td>
+                    <td class="nmr-num">8</td>
+                    <td class="nmr-num">6</td>
+                    <td class="nmr-num">6</td>
+                    <td>
+                      <button class="op-btn preview-trigger" title="结构预览">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 参考文献 -->
+        <div id="refSection" class="reference-section">
+          <div class="ref-header">
+            <div class="ref-header-left">
+              <span class="title">参考文献</span>
+              <span class="subtitle active">28 条</span>
+              <span class="subtitle">施引文献 0</span>
+            </div>
+            <div class="ref-header-right">
+              <button class="ref-filter-btn">筛选</button>
+              <button class="ref-filter-btn">排序 ▾</button>
+            </div>
+          </div>
+
+          <div class="ref-item">
+            <div class="ref-num">[1]</div>
+            <div class="ref-title">The Etiopathogenesis of Preeclampsia: A Systematic Review</div>
+            <div class="ref-authors">Jiménez DM, et al.</div>
+            <div class="ref-source"><span class="journal">Am J Obstet Gynecol</span>, 2025; 232(1): 45-58</div>
+          </div>
+
+          <div class="ref-item">
+            <div class="ref-num">[2]</div>
+            <div class="ref-title">miRNA Signatures in Gestational Hypertension: From Bench to Bedside</div>
+            <div class="ref-authors">Kim SH, Park JY, et al.</div>
+            <div class="ref-source"><span class="journal">Hypertension</span>, 2025; 85(2): 312-325</div>
+          </div>
+
+          <div class="ref-item">
+            <div class="ref-num">[3]</div>
+            <div class="ref-title">Low-Dose Aspirin for Preeclampsia Prevention: Current Evidence and Clinical Guidelines</div>
+            <div class="ref-authors">Anderson KL, et al.</div>
+            <div class="ref-source"><span class="journal">N Engl J Med</span>, 2024; 391(10): 923-937</div>
+          </div>
+
+          <div class="ref-item">
+            <div class="ref-num">[4]</div>
+            <div class="ref-title">MicroRNA-210: A Hypoxia-Regulated Master Regulator in Vascular Biology</div>
+            <div class="ref-authors">Chen LX, Wang Y, et al.</div>
+            <div class="ref-source"><span class="journal">Circ Res</span>, 2024; 134(5): 567-582</div>
+          </div>
+
+          <div class="ref-item">
+            <div class="ref-num">[5]</div>
+            <div class="ref-title">Circulating microRNAs as Early Biomarkers for Preeclampsia: A Prospective Cohort Study</div>
+            <div class="ref-authors">Rodriguez ML, et al.</div>
+            <div class="ref-source"><span class="journal">Lancet</span>, 2024; 403(10428): 789-802</div>
+          </div>
+
+          <div class="ref-item">
+            <div class="ref-num">[6]</div>
+            <div class="ref-title">Aspirin and miRNA Regulation: Molecular Mechanisms and Clinical Implications</div>
+            <div class="ref-authors">Zhang Y, Liu H, et al.</div>
+            <div class="ref-source"><span class="journal">Nat Rev Cardiol</span>, 2023; 20(8): 534-549</div>
+          </div>
+
+          <div class="ref-item">
+            <div class="ref-num">[7]</div>
+            <div class="ref-title">Longitudinal Changes in Circulating miRNAs During Pregnancy and Their Association with Hypertensive Disorders</div>
+            <div class="ref-authors">Park SH, Kim JW, et al.</div>
+            <div class="ref-source"><span class="journal">J Clin Invest</span>, 2023; 133(15): e170123</div>
+          </div>
+
+          <div class="ref-item">
+            <div class="ref-num">[8]</div>
+            <div class="ref-title">The Role of microRNAs in Placental Development and Pregnancy Complications</div>
+            <div class="ref-authors">Garcia MP, et al.</div>
+            <div class="ref-source"><span class="journal">Placenta</span>, 2023; 136: 12-24</div>
+          </div>
+
+          <div class="ref-more">展开全部 <span>▾</span></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 结构预览弹窗 ============ -->
+<div class="preview-overlay" id="previewOverlay">
+  <div class="preview-modal">
+    <div class="preview-head">
+      <span class="preview-title">结构预览</span>
+      <button class="preview-close" id="previewClose" title="关闭">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="preview-canvas-wrap">
+      <div class="preview-toolbar">
+        <div class="preview-legend">
+          <span><span class="dot c"></span>C</span>
+          <span><span class="dot h"></span>H</span>
+        </div>
+        <div class="preview-mode-switch" id="previewModeSwitch">
+          <button data-mode="2d">2D</button>
+          <button data-mode="3d" class="active">3D</button>
+        </div>
+      </div>
+      <div class="preview-stage" id="stage2d" style="display:none;">
+        <svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1f2329" stroke-width="1.6"><polygon points="80,60 40,110 80,160 160,160 200,110 160,60"/><polygon points="160,60 200,110 160,160 240,160 280,110 240,60"/></svg>
+      </div>
+      <div class="preview-stage" id="stage3d">
+        <svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
+          <defs><radialGradient id="cBall" cx="35%" cy="32%" r="65%"><stop offset="0%" stop-color="#9af0bd"/><stop offset="55%" stop-color="#2ecc71"/><stop offset="100%" stop-color="#1f8a4f"/></radialGradient><radialGradient id="hBall" cx="35%" cy="32%" r="65%"><stop offset="0%" stop-color="#ffffff"/><stop offset="60%" stop-color="#dcdfe6"/><stop offset="100%" stop-color="#a7adb8"/></radialGradient></defs>
+          <g stroke="#1f8a4f" stroke-width="6" stroke-linecap="round">
+            <line x1="100" y1="70" x2="60" y2="110"/><line x1="60" y1="110" x2="100" y2="160"/><line x1="100" y1="160" x2="160" y2="160"/><line x1="160" y1="160" x2="220" y2="160"/><line x1="220" y1="160" x2="260" y2="110"/><line x1="260" y1="110" x2="220" y2="70"/><line x1="220" y1="70" x2="160" y2="70"/><line x1="160" y1="70" x2="100" y2="70"/><line x1="160" y1="70" x2="160" y2="160"/>
+          </g>
+          <g stroke="#9aa1ad" stroke-width="3" stroke-linecap="round">
+            <line x1="100" y1="70" x2="92" y2="40"/><line x1="60" y1="110" x2="28" y2="110"/><line x1="100" y1="160" x2="92" y2="190"/><line x1="160" y1="160" x2="160" y2="195"/><line x1="220" y1="160" x2="228" y2="190"/><line x1="260" y1="110" x2="292" y2="110"/><line x1="220" y1="70" x2="228" y2="40"/><line x1="160" y1="70" x2="160" y2="35"/>
+          </g>
+          <g>
+            <circle cx="100" cy="70" r="14" fill="url(#cBall)"/><circle cx="60" cy="110" r="14" fill="url(#cBall)"/><circle cx="100" cy="160" r="14" fill="url(#cBall)"/><circle cx="160" cy="160" r="14" fill="url(#cBall)"/><circle cx="220" cy="160" r="14" fill="url(#cBall)"/><circle cx="260" cy="110" r="14" fill="url(#cBall)"/><circle cx="220" cy="70" r="14" fill="url(#cBall)"/><circle cx="160" cy="70" r="14" fill="url(#cBall)"/>
+          </g>
+          <g>
+            <circle cx="92" cy="40" r="8" fill="url(#hBall)"/><circle cx="28" cy="110" r="8" fill="url(#hBall)"/><circle cx="92" cy="190" r="8" fill="url(#hBall)"/><circle cx="160" cy="195" r="8" fill="url(#hBall)"/><circle cx="228" cy="190" r="8" fill="url(#hBall)"/><circle cx="292" cy="110" r="8" fill="url(#hBall)"/><circle cx="228" cy="40" r="8" fill="url(#hBall)"/><circle cx="160" cy="35" r="8" fill="url(#hBall)"/>
+          </g>
+        </svg>
+      </div>
+      <div class="preview-tools">
+        <button title="放大"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        <button title="缩小"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        <button title="居中"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg></button>
+      </div>
+    </div>
+    <div class="preview-foot">
+      <span id="previewIndex">1/5</span>
+      <div class="preview-nav">
+        <button id="previewPrev" title="上一个"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <button id="previewNext" title="下一个"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // NMR 展开/收起
+  function toggleNmr() {
+    const content = document.getElementById('nmrContent');
+    const btn = document.getElementById('nmrToggleBtn');
+    const isShow = content.classList.toggle('show');
+    btn.classList.toggle('expanded');
+  }
+
+  // 滚动到指定区块
+  function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  // 物质预览
+  function openSubstancePreview(idx) {
+    openPreview(idx);
+  }
+
+  // 结构预览弹窗
+  const previewOverlay = document.getElementById('previewOverlay');
+  const previewClose = document.getElementById('previewClose');
+  const previewIndex = document.getElementById('previewIndex');
+  const previewPrev = document.getElementById('previewPrev');
+  const previewNext = document.getElementById('previewNext');
+  const previewModeSwitch = document.getElementById('previewModeSwitch');
+  const stage2d = document.getElementById('stage2d');
+  const stage3d = document.getElementById('stage3d');
+  const previewTriggers = document.querySelectorAll('.preview-trigger');
+  const totalRows = previewTriggers.length;
+  let curIdx = 0;
+
+  function updateIndex() {
+    previewIndex.textContent = (curIdx + 1) + '/' + totalRows;
+    previewPrev.disabled = curIdx === 0;
+    previewNext.disabled = curIdx === totalRows - 1;
+  }
+  function openPreview(idx) {
+    curIdx = idx;
+    updateIndex();
+    previewOverlay.classList.add('show');
+  }
+  function closePreview() { previewOverlay.classList.remove('show'); }
+
+  previewTriggers.forEach((btn, i) => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openPreview(i); });
+  });
+  previewClose.addEventListener('click', closePreview);
+  previewOverlay.addEventListener('click', e => {
+    if (e.target === previewOverlay) closePreview();
+  });
+  previewPrev.addEventListener('click', () => {
+    if (curIdx > 0) { curIdx--; updateIndex(); }
+  });
+  previewNext.addEventListener('click', () => {
+    if (curIdx < totalRows - 1) { curIdx++; updateIndex(); }
+  });
+
+  // 2D / 3D 切换
+  previewModeSwitch.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      previewModeSwitch.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      const is3d = b.dataset.mode === '3d';
+      stage3d.style.display = is3d ? 'flex' : 'none';
+      stage2d.style.display = is3d ? 'none' : 'flex';
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && previewOverlay.classList.contains('show')) closePreview();
+  });
+
+  // 摘要翻译选项卡切换
+  document.querySelectorAll('.abstract-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.abstract-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.translate-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const parent = this.closest('.translate-btns');
+      parent.querySelectorAll('.translate-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  // 顶部Tab高亮切换
+  document.querySelectorAll('.topbar-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.topbar-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
