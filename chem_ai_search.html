@@ -398,6 +398,133 @@
     line-height: 1.6;
   }
 </style>
+
+<style>
+  .modal-mask {
+    position: fixed; inset: 0;
+    background: rgba(20,20,30,0.32);
+    backdrop-filter: blur(2px);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    z-index: 999;
+    padding-top: 90px;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    width: 880px; max-width: 92vw;
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 30px 32px;
+    box-shadow: 0 20px 60px rgba(50,30,110,0.18);
+    position: relative;
+    animation: pop 0.18s ease;
+  }
+  @keyframes pop {
+    from { transform: translateY(-8px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .modal-title {
+    font-size: 22px; font-weight: 700; color: #1f2329;
+    letter-spacing: 0.5px; line-height: 1.2;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .modal-title .dot {
+    width: 6px; height: 22px;
+    background: linear-gradient(180deg,#6366f1,#8b5cf6);
+    border-radius: 3px;
+  }
+  .modal-close {
+    position: absolute; top: 14px; right: 14px;
+    width: 30px; height: 30px; border: none;
+    background: transparent; border-radius: 6px;
+    cursor: pointer; color: #9ca3af;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10;
+  }
+  .modal-close:hover { background: #f3f4f6; color: #4b5563; }
+  .search-bar {
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 14px 16px; transition: all 0.2s;
+  }
+  .search-bar:focus-within {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(129,140,248,0.15);
+  }
+  .search-bar svg { color: #9ca3af; flex-shrink: 0; }
+  .search-bar input {
+    flex: 1; border: none; outline: none;
+    font-size: 15px; background: transparent; color: #1f2329;
+  }
+  .search-bar input::placeholder { color: #b7bcc4; }
+  .modal-section { margin-top: 26px; }
+  .modal-section .shead {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .modal-section .shead .stitle {
+    font-size: 13px; color: #6b7280; font-weight: 500;
+  }
+  .modal-section .clear-btn {
+    background: none; border: none; cursor: pointer;
+    color: #9ca3af; padding: 4px; border-radius: 4px;
+  }
+  .modal-section .clear-btn:hover { color: #ef4444; background: #fef2f2; }
+  .history-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; background: #f5f3fa;
+    border-radius: 16px; font-size: 13px; color: #4a4f59;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .chip:hover { background: #ebe7f5; color: #1f2329; }
+  .chip .x { color: #b7bcc4; font-size: 12px; cursor: pointer; }
+  .chip .x:hover { color: #6b7280; }
+  .quick-list {
+    display: grid; grid-template-columns: repeat(2,1fr);
+    gap: 10px 14px;
+  }
+  .quick-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border: 1px solid #ece8f5;
+    border-radius: 8px; cursor: pointer; transition: all 0.18s;
+    overflow: hidden;
+  }
+  .quick-item:hover { border-color: #c7d2fe; background: #faf9ff; }
+  .quick-tag { font-size: 12px; color: #6366f1; background: #ede9ff; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
+  .quick-text { font-size: 13px; color: #4a4f59; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .field-toggle { display: flex; align-items: center; gap: 3px; padding: 7px 7px 7px 12px; border-right: 1px solid #e5e7eb; background: #faf9fc; border-radius: 10px 0 0 10px; flex-shrink: 0; }
+  .toggle-btn { padding: 6px 14px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: #6b7280; background: transparent; }
+  .toggle-btn:hover { color: #1f2329; }
+  .toggle-btn.active { background: #6366f1; color: #fff; }
+  .pane { display: none; }
+  .pane.active { display: block; }
+  .type-toggle { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+  .type-toggle .type-btn { padding: 8px 14px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: #6b7280; background: transparent; }
+  .type-toggle .type-btn:hover { color: #1f2329; }
+  .type-toggle .type-btn.active { background: #6366f1; color: #fff; }
+  .mode-toggle { display: flex; align-items: center; gap: 2px; padding: 2px; background: #f5f3fa; border-radius: 8px; flex-shrink: 0; }
+  .mode-toggle .mode-btn { padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; color: #6b7280; background: transparent; }
+  .mode-toggle .mode-btn.active { background: #fff; color: #1f2329; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .hidden { display: none !important; }
+  .threshold-box { display: none; align-items: center; gap: 8px; padding: 0 14px; border-left: 1px solid #e5e7eb; background: #faf9fc; border-radius: 0 10px 10px 0; }
+  .threshold-box.show { display: flex; }
+  .threshold-box .th-label { font-size: 12px; color: #6b7280; }
+  .threshold-box .th-input { width: 54px; padding: 4px 6px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px; text-align: center; outline: none; }
+  .threshold-box .th-input:focus { border-color: #818cf8; }
+  .threshold-box .percent { font-size: 13px; color: #6b7280; }
+  .chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px; }
+  .req-bar { display: flex; align-items: stretch; border: 1px solid #e5e7eb; border-radius: 10px; transition: all 0.2s; }
+  .req-bar:focus-within { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,0.15); }
+  .req-bar .input-wrap { flex: 1; display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
+  .req-bar .input-wrap svg { color: #9ca3af; flex-shrink: 0; }
+  .req-bar .input-wrap input { flex: 1; border: none; outline: none; font-size: 15px; background: transparent; color: #1f2329; }
+  .req-bar .input-wrap input::placeholder { color: #b7bcc4; }
+</style>
 </head>
 <body>
 <div class="layout">
@@ -568,19 +695,19 @@
     <button class="refresh">🔄 换一换</button>
 
     <div class="db-cards">
-      <div class="db-card">
+      <div class="db-card" onclick="showModal('substance')">
         <div class="db-title">化学物质库</div>
         <div class="db-desc">500多万条化合物的"标准档案"</div>
       </div>
-      <div class="db-card">
+      <div class="db-card" onclick="showModal('reaction')">
         <div class="db-title">化学反应库</div>
         <div class="db-desc">500多万条"做出来过"的真实合成反应</div>
       </div>
-      <div class="db-card">
+      <div class="db-card" onclick="showModal('nmr')">
         <div class="db-title">NMRexp</div>
         <div class="db-desc">约337万条实验级NMR谱图，覆盖6种核素的"结构-谱图对"</div>
       </div>
-      <div class="db-card">
+      <div class="db-card" onclick="showModal('qchem')">
         <div class="db-title">分子骨架量子计算数据库</div>
         <div class="db-desc">500多万个独立分子骨架的量子化学计算结果</div>
       </div>
@@ -588,5 +715,263 @@
   </main>
 
 </div>
-</body>
-</html>
+
+<!-- ===== 化学物质库 弹窗（与 chem_substance_modal.html 一致） ===== -->
+<div class="modal-mask" id="modalSubstance">
+  <div class="modal">
+    <button class="modal-close" onclick="hideModal('substance')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-title"><span class="dot"></span>化学物质库</div>
+    <div class="search-bar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="subInput" type="text" placeholder="输入物质名称、CAS 号、分子式、InChIKey 或 SMILES" />
+    </div>
+    <div class="modal-section">
+      <div class="shead"><span class="stitle">搜索历史</span><button class="clear-btn" data-tip="清空搜索历史"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>
+      <div class="history-chips">
+        <span class="chip">Aspirin <span class="x">×</span></span>
+        <span class="chip">50-78-2 <span class="x">×</span></span>
+        <span class="chip">C9H8O4 <span class="x">×</span></span>
+        <span class="chip">BSYNRYMUTXBXSQ-UHFFFAOYSA-N <span class="x">×</span></span>
+        <span class="chip">CC(=O)OC1=CC=CC=C1C(=O)O <span class="x">×</span></span>
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="shead"><span class="stitle">快捷引导</span></div>
+      <div class="quick-list">
+        <div class="quick-item"><span class="quick-tag">物质名称</span><span class="quick-text">Aspirin</span></div>
+        <div class="quick-item"><span class="quick-tag">CAS 号</span><span class="quick-text">50-78-2</span></div>
+        <div class="quick-item"><span class="quick-tag">分子式</span><span class="quick-text">C9H8O4</span></div>
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">CC(=O)OC1=CC=CC=C1C(=O)O</span></div>
+        <div class="quick-item"><span class="quick-tag">InChIKey</span><span class="quick-text">BSYNRYMUTXBXSQ-UHFFFAOYSA-N</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 化学反应库 弹窗（与 chem_reaction_modal.html 一致） ===== -->
+<div class="modal-mask" id="modalReaction">
+  <div class="modal">
+    <button class="modal-close" onclick="hideModal('reaction')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-title"><span class="dot"></span>化学反应库</div>
+    <div class="req-bar">
+      <div class="field-toggle">
+        <button class="toggle-btn active" data-rfield="reactant">反应物</button>
+        <button class="toggle-btn" data-rfield="product">产物</button>
+      </div>
+      <div class="input-wrap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="rctInput" type="text" placeholder="输入反应物名称" />
+      </div>
+    </div>
+    <div class="pane active" data-rpane="reactant">
+      <div class="modal-section">
+        <div class="shead"><span class="stitle">搜索历史</span><button class="clear-btn" data-tip="清空搜索历史"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>
+        <div class="history-chips">
+          <span class="chip">3-Bromopyridine <span class="x">×</span></span>
+          <span class="chip">phenylboronic acid <span class="x">×</span></span>
+          <span class="chip">benzaldehyde <span class="x">×</span></span>
+          <span class="chip">methyl iodide <span class="x">×</span></span>
+          <span class="chip">acetic anhydride <span class="x">×</span></span>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="shead"><span class="stitle">快捷引导</span></div>
+        <div class="quick-list">
+          <div class="quick-item"><span class="quick-tag">反应物</span><span class="quick-text">3-Bromopyridine</span></div>
+          <div class="quick-item"><span class="quick-tag">反应物</span><span class="quick-text">phenylboronic acid</span></div>
+          <div class="quick-item"><span class="quick-tag">反应物</span><span class="quick-text">benzaldehyde</span></div>
+          <div class="quick-item"><span class="quick-tag">反应物</span><span class="quick-text">acetic anhydride</span></div>
+          <div class="quick-item"><span class="quick-tag">反应物</span><span class="quick-text">methyl iodide</span></div>
+          <div class="quick-item"><span class="quick-tag">反应物</span><span class="quick-text">aniline</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="pane" data-rpane="product">
+      <div class="modal-section">
+        <div class="shead"><span class="stitle">搜索历史</span><button class="clear-btn" data-tip="清空搜索历史"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>
+        <div class="history-chips">
+          <span class="chip">3-phenylpyridine <span class="x">×</span></span>
+          <span class="chip">benzyl alcohol <span class="x">×</span></span>
+          <span class="chip">acetanilide <span class="x">×</span></span>
+          <span class="chip">methyl benzoate <span class="x">×</span></span>
+          <span class="chip">biphenyl <span class="x">×</span></span>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="shead"><span class="stitle">快捷引导</span></div>
+        <div class="quick-list">
+          <div class="quick-item"><span class="quick-tag">产物</span><span class="quick-text">3-phenylpyridine</span></div>
+          <div class="quick-item"><span class="quick-tag">产物</span><span class="quick-text">biphenyl</span></div>
+          <div class="quick-item"><span class="quick-tag">产物</span><span class="quick-text">benzyl alcohol</span></div>
+          <div class="quick-item"><span class="quick-tag">产物</span><span class="quick-text">methyl benzoate</span></div>
+          <div class="quick-item"><span class="quick-tag">产物</span><span class="quick-text">acetanilide</span></div>
+          <div class="quick-item"><span class="quick-tag">产物</span><span class="quick-text">styrene</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NMRexp 弹窗（与 chem_nmr_modal.html 一致） ===== -->
+<div class="modal-mask" id="modalNmr">
+  <div class="modal">
+    <button class="modal-close" onclick="hideModal('nmr')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-title"><span class="dot"></span>NMRexp</div>
+    <div class="req-bar">
+      <div class="type-toggle" id="nmrType">
+        <button class="type-btn active" data-ntype="smiles">SMILES</button>
+        <button class="type-btn" data-ntype="doi">DOI</button>
+      </div>
+      <div class="mode-toggle" id="nmrMode">
+        <button class="mode-btn active" data-nmode="similarity">相似度检索</button>
+        <button class="mode-btn" data-nmode="substructure">子结构检索</button>
+      </div>
+      <div class="input-wrap" style="flex:1;display:flex;align-items:center;gap:10px;padding:14px 16px;min-width:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="nmrInput" type="text" placeholder="输入 SMILES…" style="flex:1;border:none;outline:none;font-size:15px;background:transparent;color:#1f2329" />
+      </div>
+      <div class="threshold-box" id="nmrThreshold">
+        <span class="th-label">相似度阈值</span>
+        <input class="th-input" type="number" min="0" max="100" value="90" />
+        <span class="percent">%</span>
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="shead"><span class="stitle">搜索历史</span><button class="clear-btn" data-tip="清空搜索历史"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>
+      <div class="history-chips">
+        <span class="chip"><span class="chip-text">10.1021_acs.orglett.3c00718</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">10.1021_jacs.2c04325</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">10.1002_anie.202301234</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">(CC)(CC)(CC)/C(F)=C(/Cc1ccc2ccccc2c1)C(=O)OCC</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">CC(=O)OC1=CC=CC=C1C(=O)O</span><span class="x">×</span></span>
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="shead"><span class="stitle">快捷引导</span></div>
+      <div class="quick-list">
+        <div class="quick-item"><span class="quick-tag">文献 DOI</span><span class="quick-text">10.1021_acs.orglett.3c00718</span></div>
+        <div class="quick-item"><span class="quick-tag">文献 DOI</span><span class="quick-text">10.1021_jacs.2c04325</span></div>
+        <div class="quick-item"><span class="quick-tag">文献 DOI</span><span class="quick-text">10.1002_anie.202301234</span></div>
+        <div class="quick-item"><span class="quick-tag">文献 DOI</span><span class="quick-text">10.1039_D3SC00123A</span></div>
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">(CC)(CC)(CC)/C(F)=C(/Cc1ccc2ccccc2c1)C(=O)OCC</span></div>
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">CC(=O)OC1=CC=CC=C1C(=O)O</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 分子骨架量子计算数据库 弹窗（与 chem_qchem_modal.html 一致） ===== -->
+<div class="modal-mask" id="modalQchem">
+  <div class="modal">
+    <button class="modal-close" onclick="hideModal('qchem')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-title"><span class="dot"></span>分子骨架量子计算数据库</div>
+    <div class="search-bar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="qcInput" type="text" placeholder="输入 SMILES 或 InChIKey" />
+    </div>
+    <div class="modal-section">
+      <div class="shead"><span class="stitle">搜索历史</span><button class="clear-btn" data-tip="清空搜索历史"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>
+      <div class="history-chips">
+        <span class="chip"><span class="chip-text">O=C1C(Cl)=CC(=NSc2ccccn2)C=C1Cl</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">O=C1C=CC(=NSc2ccccn2)C=C1</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">c1ccc2ccccc2c1</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">JOHRQANCRKQLHR-UHFFFAOYSA-N</span><span class="x">×</span></span>
+        <span class="chip"><span class="chip-text">BSYNRYMUTXBXSQ-UHFFFAOYSA-N</span><span class="x">×</span></span>
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="shead"><span class="stitle">快捷引导</span></div>
+      <div class="quick-list">
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">O=C1C(Cl)=CC(=NSc2ccccn2)C=C1Cl</span></div>
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">O=C1C=CC(=NSc2ccccn2)C=C1</span></div>
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">c1ccc2ccccc2c1</span></div>
+        <div class="quick-item"><span class="quick-tag">SMILES</span><span class="quick-text">CC(=O)OC1=CC=CC=C1C(=O)O</span></div>
+        <div class="quick-item"><span class="quick-tag">InChIKey</span><span class="quick-text">JOHRQANCRKQLHR-UHFFFAOYSA-N</span></div>
+        <div class="quick-item"><span class="quick-tag">InChIKey</span><span class="quick-text">BSYNRYMUTXBXSQ-UHFFFAOYSA-N</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showModal(name) {
+  document.getElementById('modal' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('show');
+}
+function hideModal(name) {
+  document.getElementById('modal' + name.charAt(0).toUpperCase() + name.slice(1)).classList.remove('show');
+}
+// 点击遮罩关闭
+document.querySelectorAll('.modal-mask').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-mask.show').forEach(m => m.classList.remove('show'));
+});
+// 反应物/产物按钮切换
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const parent = btn.closest('.req-bar');
+    parent.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const field = btn.dataset.rfield;
+    const input = parent.querySelector('input');
+    input.placeholder = field === 'reactant' ? '输入反应物名称' : '输入产物名称';
+    input.value = '';
+    parent.closest('.modal').querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.dataset.rpane === field));
+  });
+});
+// NMR 类型/模式切换
+document.querySelectorAll('.type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.parentElement.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const isSmiles = btn.dataset.ntype === 'smiles';
+    const parent = btn.closest('.req-bar');
+    parent.querySelector('.mode-toggle').classList.toggle('hidden', !isSmiles);
+    if (!isSmiles) parent.querySelector('.threshold-box').classList.remove('show');
+    const input = parent.querySelector('input');
+    input.placeholder = isSmiles ? '输入 SMILES…' : '输入谱图来源文献 DOI';
+  });
+});
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.parentElement.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const thBox = btn.closest('.req-bar').querySelector('.threshold-box');
+    thBox.classList.toggle('show', btn.dataset.nmode === 'similarity');
+  });
+});
+// chip 删除
+document.querySelectorAll('.chip .x').forEach(x => {
+  x.addEventListener('click', e => { e.stopPropagation(); x.parentElement.remove(); });
+});
+// chip 点击填入
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', e => {
+    if (e.target.classList.contains('x')) return;
+    const input = chip.closest('.modal').querySelector('input');
+    if (input) {
+      input.value = chip.firstChild.textContent.trim();
+      input.focus();
+    }
+  });
+});
+// 快捷引导点击填入
+document.querySelectorAll('.quick-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const input = item.closest('.modal').querySelector('input');
+    if (input) {
+      input.value = item.querySelector('.quick-text').textContent;
+      input.focus();
+    }
+  });
+});
+</script>
